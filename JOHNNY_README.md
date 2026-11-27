@@ -1,10 +1,10 @@
 NEURAL JOHNNY - player notes
 ========================
-Beta 0.1, tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1).
+Version 1.0.0, tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1).
 
 START
   The start screen shows the name, "PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON."
-  and a small ORION-MUSICA.
+  and a small ORION-MUSICA V1.0.0.
   Press any key: that note is the first 16th of bar 1. A silent 132 BPM clock starts.
 
 YOUR MELODY

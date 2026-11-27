@@ -69,16 +69,17 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
     <li><a href="#screen">The screen</a></li>
     <li><a href="#lights">Neural lights</a></li>
     <li><a href="#inside">How the model works</a></li>
+    <li><a href="#limits">Known limits</a></li>
     <li><a href="#help">Troubleshooting</a></li>
   </ol>
 </aside>
 <main>
 <h1>Manual</h1>
-<p class="lead">Neural Johnny 0.1 BETA for the M-VAVE FM-1. Built on FM1 Open V14. Tested on an original FM-1 (FCC ID: 2ARCP-FM1).</p>
+<p class="lead">Neural Johnny 1.0.0 for the M-VAVE FM-1. Built on FM1 Open V14. Tested on an original FM-1 (FCC ID: 2ARCP-FM1).</p>
 <div class="box"><strong>Names used here.</strong> Buttons are written like <kbd>HOME</kbd>. The seven encoders are <kbd>SELECT</kbd>, <kbd>ALGORITHM</kbd>, <kbd>PRESETS</kbd> and <kbd>K1</kbd>&ndash;<kbd>K4</kbd> (the four knobs under the screen). <kbd>MASTER</kbd> is the volume. The keyboard has 27 keys, F3 to G5.</div>
 
 <h2 id="start">1. First start</h2>
-<p>After installing, the FM-1 restarts on the start screen: <code>NEURAL JOHNNY</code>, <code>PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON.</code>, a blinking cursor and <code>ORION-MUSICA</code>. Nothing plays yet: Johnny waits for your idea. While it waits, the key and button lights spark slowly.</p>
+<p>After installing, the FM-1 restarts on the start screen: <code>NEURAL JOHNNY</code>, <code>PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON.</code>, a blinking cursor and a small <code>ORION-MUSICA V1.0.0</code>, the version you run. Nothing plays yet: Johnny waits for your idea. While it waits, the key and button lights spark slowly.</p>
 <figure><img src="../assets/boot.png" width="480" height="480" alt="The start screen"><figcaption>The start screen. These are the only words Johnny shows, apart from knob labels.</figcaption></figure>
 
 <h2 id="panel">2. The panel</h2>
@@ -242,7 +243,15 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <p>The <b>groove model</b> is a second, smaller network (about 4,400 weights). For each sixteenth it looks at each drum's hits one, two, four, eight and sixteen steps back and half a loop back, which drums you used, and where it is in the bar, and gives every drum its own chance to hit. Drums you did not play join only when it is very sure. It was trained on rule-built techno grooves: four-on-the-floor and broken kicks, backbeats, off-beat and sixteenth hats, syncopated rims and cowbells, tom fills at the end of a phrase.</p>
 <p>The melody model was trained on a rule-built collection of hypnotic techno motifs: minor, phrygian and dorian modes, pedal tones, arpeggios, short cells repeated with small changes, answers that land on the root or the fifth. The training script in the source (<code>johnny/tools/train_model.py</code>) can mix in your own loops from <code>johnny/data/</code>.</p>
 
-<h2 id="help">15. Troubleshooting</h2>
+<h2 id="limits">15. Known limits</h2>
+<ul>
+<li>The panel buttons have no velocity and every hit and note snaps to a sixteenth.</li>
+<li>Both models were trained on rule-built hypnotic-techno material, not on recordings. Anyone can retrain them on their own loops with <code>johnny/tools/train_model.py</code> and <code>train_drums.py</code>.</li>
+<li>Neural Johnny plays its own small synth; the FM-1's DX7 engine stays silent. It saves nothing to the FM-1's memory: every session starts from the start screen.</li>
+<li>The lights are on or off, there is no dimming.</li>
+</ul>
+
+<h2 id="help">16. Troubleshooting</h2>
 <h3>Nothing plays</h3>
 <p>Turn <kbd>MASTER</kbd> up and play a few notes. Johnny plays nothing before your first melody.</p>
 <h3>The answer starts too early or too late</h3>
@@ -261,6 +270,6 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <p><kbd>HOME</kbd> stops the music, clears the melody and resets every knob.</p>
 </main>
 </div>
-<footer>Neural Johnny by Orion-Musica · code written together with Claude · built on FM1 Open · GPL-3.0</footer>
+<footer>Neural Johnny 1.0.0 by Orion-Musica · code written together with Claude · built on FM1 Open · GPL-3.0</footer>
 </body>
 </html>

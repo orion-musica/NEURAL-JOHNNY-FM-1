@@ -6,6 +6,7 @@
 #pragma once
 #include "johnny_port.h"
 
+#define JOHNNY_VERSION "1.0.0"
 enum { MM_KEY_LOWEST_MIDI = 53, MM_KEY_COUNT = 27 };      /* F3 .. G5 */
 enum { MM_B_OCT_DOWN, MM_B_OCT_UP, MM_B_FX, MM_B_SCL, MM_B_ENV, MM_B_LFO, MM_B_EDIT, MM_B_GLO,
        MM_B_HOME, MM_B_SAVE, MM_B_ARP, MM_B_SEQ, MM_B_PLAY, MM_B_REC, MM_B_COUNT };

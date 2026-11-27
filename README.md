@@ -14,8 +14,8 @@ OCT- mutes sounds one by one (your drum groove first, the melody last), OCT+ bri
 [**Install on the FM-1**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/install/) ·
 [**Manual**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/manual/) · [Player notes](JOHNNY_README.md)
 
-> **Beta 0.1, tested on hardware.** Tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1): the AI models run on the device
-> itself, and surprisingly well. Still a beta: back up your FM-1 projects before installing.
+> **Version 1.0.0, tested on hardware.** Tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1): the AI models run on
+> the device itself, and surprisingly well. Back up your FM-1 projects before installing. See [CHANGELOG.md](CHANGELOG.md).
 
 ## Where things are
 

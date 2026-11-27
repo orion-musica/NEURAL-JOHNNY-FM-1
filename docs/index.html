@@ -88,13 +88,14 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
 <header class="hero">
   <div class="wrap">
     <div>
-      <p class="kicker">M-VAVE FM-1 · BETA 0.1 · TESTED ON HARDWARE</p>
+      <p class="kicker">M-VAVE FM-1 · VERSION 1.0 · TESTED ON HARDWARE</p>
       <h1>NEURAL<small>JOHNNY</small></h1>
       <p class="lead">Play 1 to 16 notes. A tiny neural network inside the FM-1 keeps your melody going as a hypnotic techno track: it answers you, changes a note or two every time round, brings in a new sound every 8 bars and lets them breathe. Tap a groove on the panel buttons and it continues that too. Turn the knobs to steer it. Every sound is an oscillator line on a 90s phone screen, and the keys fire like neurons.</p>
       <div class="actions">
         <a class="btn primary" href="install/">INSTALL ›</a>
         <a class="btn" href="play/">TRY IN BROWSER</a>
         <a class="btn" href="manual/">MANUAL</a>
+        <a class="btn" href="downloads/NeuralJohnny.fwsc" download>NEURALJOHNNY.FWSC</a>
       </div>
       <p class="tested">Tested on a real M-VAVE FM-1 (FCC ID: 2ARCP-FM1): the AI runs on the device itself, and it works surprisingly well. Try it yourself.</p>
     </div>
@@ -247,7 +248,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
 <section id="limits">
   <div class="wrap">
     <h2>Good to know</h2>
-    <div class="warn"><strong>BETA 0.1 · tested on hardware.</strong> Neural Johnny has been tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1), and the melody and groove models run on the device itself, surprisingly well. Testing on the device goes on with every release, and every build also passes the official JieLi toolchain, the SDK's memory checks and a PC test of the real model, synth and screen code. It is still a beta: back up before you install.</div>
+    <div class="warn"><strong>VERSION 1.0.0 · tested on hardware.</strong> Neural Johnny has been tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1), and the melody and groove models run on the device itself, surprisingly well. Every build also passes the official JieLi toolchain, the SDK's memory checks and a PC test of the real model, synth and screen code. It is firmware, so back up before you install. What changed: <a href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1/blob/main/CHANGELOG.md">changelog</a>.</div>
     <div class="grid2" style="margin-top:18px">
       <div class="card"><h3>What the model learned</h3><p>It was trained on a rule-built set of hypnotic techno motifs: minor modes, pedal tones, short cells repeated with small changes. Anyone can retrain it on their own loops with one Python script.</p></div>
       <div class="card"><h3>Kept in key</h3><p>The model only picks notes from the scale and range of what you played, so even a WILD setting stays musical.</p></div>
@@ -262,7 +263,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
 
 <footer>
   <div class="wrap">
-    <span>Neural Johnny by Orion-Musica · code written together with Claude · built on FM1 Open</span>
+    <span>Neural Johnny 1.0.0 by Orion-Musica · code written together with Claude · built on FM1 Open</span>
     <span>GPL-3.0 with the FM1 SDK linking exception · not affiliated with M-VAVE · no phone maker's logo or name is used</span>
   </div>
 </footer>

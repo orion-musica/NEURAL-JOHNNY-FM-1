@@ -422,11 +422,12 @@ static void lcd_text(int x, int y, const char *s)
 }
 static void lcd_text_c(int y, const char *s) { lcd_text((MM_LCD_W - (int)strlen(s) * 6 + 1) / 2, y, s); }
 
-/* Tiny 3x5 letters, only the ones the start screen's credit needs. */
+/* Tiny 3x5 letters, only the ones the start screen's credit and version need. */
 static const struct { char c; uint8_t rows[5]; } TINY[] = {
     {'O', {7, 5, 5, 5, 7}}, {'R', {6, 5, 6, 5, 5}}, {'I', {7, 2, 2, 2, 7}}, {'N', {5, 7, 7, 7, 5}},
     {'-', {0, 0, 7, 0, 0}}, {'M', {5, 7, 7, 5, 5}}, {'U', {5, 5, 5, 5, 7}}, {'S', {7, 4, 7, 1, 7}},
-    {'C', {7, 4, 4, 4, 7}}, {'A', {2, 5, 7, 5, 5}},
+    {'C', {7, 4, 4, 4, 7}}, {'A', {2, 5, 7, 5, 5}}, {'V', {5, 5, 5, 5, 2}}, {'1', {2, 6, 2, 2, 7}},
+    {'0', {7, 5, 5, 5, 7}}, {'.', {0, 0, 0, 0, 2}},
 };
 static void lcd_tiny_c(int y, const char *s)
 {
@@ -452,7 +453,7 @@ static void draw_start(void)
     lcd_text_c(41, "NOTES. I WILL");
     lcd_text_c(50, "CARRY YOUR");
     lcd_text_c(59, "MELODY ON.");
-    lcd_tiny_c(73, "ORION-MUSICA");
+    lcd_tiny_c(73, "ORION-MUSICA V" JOHNNY_VERSION);
     if ((S.now / 500u) & 1u)                              /* blinking phone cursor */
         for (int y = 59; y < 66; ++y) for (int x = 70; x < 74; ++x) lcd_set(x, y);
 }
