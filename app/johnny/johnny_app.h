@@ -13,8 +13,11 @@ enum { MM_LCD_W = 80, MM_LCD_H = 80, MM_CELL = 3 };       /* 80 x 80 phone pixel
 enum { MM_VIEW_START, MM_VIEW_WAVES };
 
 void johnny_init(uint32_t now_ms);
-/* keys: bit n = key n held (F3 + n); buttons: bit n = panel button n held. */
-void johnny_tick(uint32_t now_ms, uint32_t keys, uint32_t buttons);
+/* Knobs, in the order fm1_controls.encoders reports them. */
+enum { JK_SELECT, JK_ALGO, JK_K1, JK_K2, JK_K3, JK_K4, JK_PRESET, JK_COUNT };
+/* keys: bit n = key n held (F3 + n); buttons: bit n = panel button n held;
+ * enc: detents turned since the previous tick (may be NULL). */
+void johnny_tick(uint32_t now_ms, uint32_t keys, uint32_t buttons, const int16_t *enc);
 
 /* Phone LCD: 80 x 80 bits, row-major, 10 bytes a row, bit 7 = leftmost. */
 const uint8_t *johnny_lcd(void);

@@ -3,7 +3,9 @@
 A TinyML melody-continuation app for the **M-VAVE FM-1**, by BULØKE.
 Play 1–16 notes; a tiny on-device model carries your melody on as a hypnotic
 techno track, developing it a little on every repeat and adding one sound every
-8 bars. Each sound is a waving oscillator line in square pixels on a two-tone
+8 bars. Knobs shape it live: PRESETS morphs the lead's sound, K1 filter, K2 drive,
+K3 how much the model mutates, K4 how busy it plays, SELECT tempo, ALGORITHM note length.
+Each sound is a waving oscillator line in square pixels on a two-tone
 90s-phone LCD.
 
 [**Play in the browser**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/play/) ·

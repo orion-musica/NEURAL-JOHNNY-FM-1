@@ -50,7 +50,14 @@ int main(int argc, char **argv)
         keys = 0;
         for (int i = 0; i < ne; ++i)
             if (now >= evs[i].ms && now < evs[i].ms + evs[i].dur_steps * STEP_MS * 0.7) keys |= 1u << evs[i].key;
-        johnny_tick((uint32_t)now, keys, 0);
+        int16_t enc[7] = {0};
+        /* knob script: filter sweep down and back in bars 40-47, sound morph, mutate up */
+        unsigned tick_n = f / 128;
+        if (now > t0 + 40 * 16 * STEP_MS && now < t0 + 44 * 16 * STEP_MS && tick_n % 160 == 0) enc[2] = -1;
+        if (now > t0 + 44 * 16 * STEP_MS && now < t0 + 48 * 16 * STEP_MS && tick_n % 160 == 0) enc[2] = 1;
+        if (now > t0 + 20 * 16 * STEP_MS && now < t0 + 30 * 16 * STEP_MS && tick_n % 400 == 0) enc[6] = 1;
+        if (now > t0 + 60 * 16 * STEP_MS && tick_n % 600 == 0) enc[4] = 1;
+        johnny_tick((uint32_t)now, keys, 0, enc);
         memset(block, 0, sizeof block);
         johnny_audio_render(block, 128);
         for (unsigned i = 0; i < 256; ++i) {

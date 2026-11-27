@@ -37,7 +37,12 @@ void ms_cancel(void);                        /* forget a commit not yet taken */
 int ms_pending(void);
 
 void ms_plan_mask(uint32_t bar, uint8_t mask);   /* layers on in that bar */
-void ms_mask_now(uint8_t mask);              /* layers on from the next 16th */
+void ms_mask_now(uint8_t mask);
+/* Knobs: tempo (BPM), the lead's FM sound, master filter (-1 low-pass ..
+ * 0 off .. +1 high-pass) and drive (0..1). */
+void ms_set_tempo(float bpm);
+void ms_set_lead(float ratio, float depth, float tone, float decay_s, float idx_s, float gate_steps);
+void ms_set_fx(float filter, float drive);              /* layers on from the next 16th */
 void ms_lead_hold(int on);                   /* silence the model's lead now */
 
 void ms_live_on(unsigned midi);              /* the player's own notes */

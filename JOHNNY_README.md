@@ -35,9 +35,20 @@ SCREEN
   A resting sound's line disappears. The key under the melody note lights up.
 
 CONTROLS
-  Keys     play
-  MASTER   volume
-  HOME     back to the start screen (stops the music)
+  Keys       play
+  PRESETS    the melody's sound evolves: 8 FM timbres (SOFT, HOLLOW, BELL, GLASS,
+             METAL, ACID, REED, VAPOUR), 8 small morph steps between each, 64 in all,
+             going round. Every detent changes the sound a little.
+  K1         FILTER: left = low-pass (darker), right = high-pass (thinner), middle = off
+  K2         DRIVE: saturation of the whole mix
+  K3         MUTATE 0..10: how much the model changes on every repeat.
+             0 = frozen loop, 1-3 calm (safe notes), 4-7 alive, 8-10 wild
+  K4         NOTES -5..+5: sparser or busier answers
+  SELECT     TEMPO 118..140 BPM
+  ALGORITHM  LENGTH: note length of the melody, staccato to legato
+  MASTER     volume
+  HOME       back to the start screen (stops the music, knobs back to default)
+  While a knob turns, its name and value show at the top of the screen for a second.
 
 STORAGE
   Neural Johnny saves nothing in the FM-1's Flash.

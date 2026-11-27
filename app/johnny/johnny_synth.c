@@ -4,7 +4,7 @@
 #include "johnny_synth.h"
 
 #define FS 44100.0f
-#define SPT (FS * 60.0f / (float)MS_BPM / 4.0f)     /* samples per 16th */
+static volatile float SPT = FS * 60.0f / (float)MS_BPM / 4.0f;   /* samples per 16th (SELECT: tempo) */
 
 /* ------------------------------------------------ control -> interrupt */
 static ms_phrase phr[2];
@@ -40,8 +40,13 @@ static float k_lead, k_lead_rel, k_idx, k_echo, k_kick, k_kick_pitch, k_bass, k_
 
 static float coef(float tau_s) { return mm_exp_neg(1.0f / (tau_s * FS)); }
 
+/* Knob-driven sound: lead gate, master DJ filter and drive. */
+static volatile float lead_gate = 0.55f;
+static volatile float fx_lp_g = 1.0f, fx_hp_g = 0.0f, fx_drive = 0.0f;
+static float fx_lp[2][2], fx_hp[2][2];
+
 /* ------------------------------------------------------------ voices */
-typedef struct { float pc, pm, hz, env, idx, ratio, depth, tone, low; int gate; uint8_t midi; } fm_t;
+typedef struct { float pc, pm, hz, env, idx, ratio, depth, tone, low, k_idx; int gate; uint8_t midi; } fm_t;
 static fm_t lead, live, echo;
 static float kick_ph, kick_hz, kick_env, kick_click;
 static fm_t bass;
@@ -72,7 +77,7 @@ static FM1_AUDIO_CODE float fm_run(fm_t *v, float k_decay, float k_release)
     v->pm += v->hz * v->ratio * (1.0f / FS); if (v->pm >= 1.0f) v->pm -= 1.0f;
     v->pc += v->hz * (1.0f / FS); if (v->pc >= 1.0f) v->pc -= 1.0f;
     float s = mm_sin01(v->pc + v->depth * (0.25f + v->idx) * mm_sin01(v->pm));
-    v->idx *= k_idx;
+    v->idx *= v->k_idx;
     if (v->gate > 0) { --v->gate; v->env *= k_decay; } else v->env *= k_release;
     v->low += v->tone * (s - v->low);
     return v->low * v->env;
@@ -104,7 +109,7 @@ static FM1_AUDIO_CODE void do_step(void)
     unsigned s = step_in_bar;
     if (p->len) {
         uint8_t n = p->note[pos & (p->len - 1u)];
-        if ((m & (1u << L_LEAD)) && !hold && n) fm_trigger(&lead, n, 0.55f);
+        if ((m & (1u << L_LEAD)) && !hold && n) fm_trigger(&lead, n, lead_gate);
         unsigned e = (pos + p->len - 3u) & (p->len - 1u);          /* dotted-8th echo */
         uint8_t en = p->note[e];
         if ((m & (1u << L_ECHO)) && en && ((p->echo_keep[e >> 5] >> (e & 31u)) & 1u)) fm_trigger(&echo, en + 12u > 108u ? en : en + 12u, 0.4f);
@@ -190,7 +195,21 @@ FM1_AUDIO_CODE void johnny_audio_render(int32_t *out, unsigned frames)
             v = drone_lp2 * drone_amp * 0.11f * (0.55f + 0.45f * side);
             l += v * 0.8f; r += v;
         }
-        l = softclip(l * 1.1f) * 0.9f; r = softclip(r * 1.1f) * 0.9f;
+        {   /* K1: DJ filter (low-pass left, high-pass right); K2: drive */
+            float g = fx_lp_g, h = fx_hp_g, x[2] = { l, r };
+            for (unsigned c = 0; c < 2; ++c) {
+                if (g < 0.999f) {
+                    fx_lp[c][0] += g * (x[c] - fx_lp[c][0]); fx_lp[c][1] += g * (fx_lp[c][0] - fx_lp[c][1]);
+                    x[c] = fx_lp[c][1];
+                } else fx_lp[c][0] = fx_lp[c][1] = x[c];
+                if (h > 0.0001f) {
+                    fx_hp[c][0] += h * (x[c] - fx_hp[c][0]); fx_hp[c][1] += h * (fx_hp[c][0] - fx_hp[c][1]);
+                    x[c] -= fx_hp[c][1];
+                } else fx_hp[c][0] = fx_hp[c][1] = 0.0f;
+            }
+            float d = fx_drive, pre = 1.1f + 7.0f * d, post = 0.9f / (1.0f + 1.2f * d);
+            l = softclip(x[0] * pre) * post; r = softclip(x[1] * pre) * post;
+        }
         out[2 * f] += (int32_t)(l * 8388000.0f);
         out[2 * f + 1] += (int32_t)(r * 8388000.0f);
     }
@@ -213,11 +232,12 @@ void ms_init(void)
     k_kick = coef(0.20f); k_kick_pitch = coef(0.028f); k_bass = coef(0.07f); k_hat = coef(0.055f);
     k_clap = coef(0.09f); k_perc = coef(0.06f); k_perc_idx = coef(0.02f); k_duck = coef(0.11f);
     k_drone_up = coef(1.4f); k_drone_down = coef(0.6f);
-    lead.ratio = 1.0f; lead.depth = 0.9f; lead.tone = 0.55f;
+    lead.ratio = 1.0f; lead.depth = 0.9f; lead.tone = 0.55f; lead.k_idx = k_idx;
     live = lead;
-    echo.ratio = 3.5f; echo.depth = 0.45f; echo.tone = 0.35f;
-    bass.ratio = 1.0f; bass.depth = 0.5f; bass.tone = 0.25f;
-    perc.ratio = 1.47f; perc.depth = 1.1f; perc.tone = 0.6f;
+    echo.ratio = 3.5f; echo.depth = 0.45f; echo.tone = 0.35f; echo.k_idx = k_idx;
+    bass.ratio = 1.0f; bass.depth = 0.5f; bass.tone = 0.25f; bass.k_idx = k_idx;
+    perc.ratio = 1.47f; perc.depth = 1.1f; perc.tone = 0.6f; perc.k_idx = k_perc_idx;
+    SPT = FS * 60.0f / (float)MS_BPM / 4.0f; lead_gate = 0.55f; fx_lp_g = 1.0f; fx_hp_g = 0.0f; fx_drive = 0.0f;
     running = 0; mask = 0; hold = 0; pending = 0; plan_bar = 0xffffffffu;
     for (unsigned b = 0; b < 2; ++b) { phr[b].len = 0; phr[b].root = 0; phr[b].bass_bits = phr[b].perc_bits = 0; phr[b].echo_keep[0] = phr[b].echo_keep[1] = 0; }
 }
@@ -234,6 +254,23 @@ void ms_cancel(void) { pending = 0; }
 int ms_pending(void) { return pending; }
 void ms_plan_mask(uint32_t bar, uint8_t m) { plan_bar = 0xffffffffu; plan_mask = m; plan_bar = bar; }
 void ms_mask_now(uint8_t m) { mask = m; }
+void ms_set_tempo(float bpm) { SPT = FS * 60.0f / bpm / 4.0f; }
+void ms_set_lead(float ratio, float depth, float tone, float decay_s, float idx_s, float gate_steps)
+{
+    float ki = coef(idx_s);
+    lead.ratio = ratio; lead.depth = depth; lead.tone = tone; lead.k_idx = ki;
+    live.ratio = ratio; live.depth = depth; live.tone = tone; live.k_idx = ki;
+    k_lead = coef(decay_s); k_live = coef(decay_s * 1.6f);
+    lead_gate = gate_steps;
+}
+void ms_set_fx(float filter, float drive)
+{
+    /* filter -1..0: low-pass 18 kHz -> 160 Hz; 0..1: high-pass 20 Hz -> 2.5 kHz */
+    if (filter < -0.01f) { float fc = 18000.0f * mm_exp_neg(-filter * 4.72f); fx_lp_g = 1.0f - mm_exp_neg(2.0f * MM_PI * fc / FS); fx_hp_g = 0.0f; }
+    else if (filter > 0.01f) { float fc = 20.0f / mm_exp_neg(filter * 4.83f); fx_hp_g = 1.0f - mm_exp_neg(2.0f * MM_PI * fc / FS); fx_lp_g = 1.0f; }
+    else { fx_lp_g = 1.0f; fx_hp_g = 0.0f; }
+    fx_drive = drive;
+}
 void ms_lead_hold(int on) { hold = (uint8_t)(on != 0); }
 void ms_live_on(unsigned midi) { post(Q_ON, midi); }
 void ms_live_off(unsigned midi) { post(Q_OFF, midi); }

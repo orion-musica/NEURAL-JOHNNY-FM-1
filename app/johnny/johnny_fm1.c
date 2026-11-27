@@ -75,6 +75,6 @@ void johnny_fm1_control(void)
     fm1_controls_read(&c);
     groove_master_update(c.knob);              /* MASTER knob keeps working as volume */
     uint32_t now = fm1_millis();
-    johnny_tick(now, c.keys & 0x07ffffffu, c.buttons & 0x3fffu);
+    johnny_tick(now, c.keys & 0x07ffffffu, c.buttons & 0x3fffu, c.encoders);
     redraw(now);
 }

@@ -12,6 +12,14 @@
  *  4. A new melody at any moment: everything keeps playing, the lead waits,
  *     the model continues the new motif; the layers not yet in come in at
  *     random block lines instead of in order.
+ *  5. Knobs (a short label shows at the top of the screen while turning):
+ *       PRESETS    the lead's sound evolves step by step through 8 FM timbres
+ *       K1 FILTER  DJ filter: left low-pass, right high-pass
+ *       K2 DRIVE   saturation of the whole mix
+ *       K3 MUTATE  how much the model changes per repeat (0 = frozen loop)
+ *       K4 NOTES   sparser or busier answers
+ *       SELECT     tempo 118..140 BPM
+ *       ALGORITHM  note length of the lead
  *  HOME goes back to the start screen. */
 #include "johnny_app.h"
 #include "johnny_model.h"
@@ -20,6 +28,13 @@
 #include <string.h>
 
 /* ------------------------------------------------------------- helpers */
+static float sqrtf_(float x)
+{
+    if (x <= 0.0f) return 0.0f;
+    float r = x > 1.0f ? x * 0.5f : 1.0f;
+    for (int i = 0; i < 8; ++i) r = 0.5f * (r + x / r);
+    return r;
+}
 static uint32_t rng_state = 0x6d2b79f5u;
 static uint32_t rnd(void) { uint32_t x = rng_state; x ^= x << 13; x ^= x >> 17; x ^= x << 5; return rng_state = x; }
 static float rndf(void) { return (float)(rnd() >> 8) * (1.0f / 16777216.0f); }
@@ -42,6 +57,25 @@ static const uint16_t SCALES[] = {
     0xab5, /* ionian   0 2 4 5 7 9 11 */
 };
 
+/* PRESETS walks through these timbres in 8 small steps each, so the sound
+ * morphs a little with every detent instead of jumping. */
+typedef struct { const char *name; float ratio, depth, tone, decay_s, idx_s; } timbre_t;
+static const timbre_t TIMBRES[] = {
+    { "SOFT",   1.00f, 0.9f, 0.55f, 0.20f, 0.06f },
+    { "HOLLOW", 2.00f, 0.8f, 0.50f, 0.22f, 0.08f },
+    { "BELL",   3.50f, 0.7f, 0.60f, 0.35f, 0.12f },
+    { "GLASS",  5.00f, 0.5f, 0.70f, 0.30f, 0.05f },
+    { "METAL",  1.41f, 1.4f, 0.55f, 0.18f, 0.10f },
+    { "ACID",   1.00f, 2.2f, 0.30f, 0.15f, 0.04f },
+    { "REED",   0.50f, 1.6f, 0.40f, 0.25f, 0.30f },
+    { "VAPOUR", 1.00f, 0.6f, 0.35f, 0.60f, 0.50f },
+};
+enum { N_TIMBRES = 8, MORPH_STEPS = 8, SOUND_POSITIONS = N_TIMBRES * MORPH_STEPS };
+
+static struct {
+    int tempo, gate, sound, filter, drive, mutate, notes;
+} K;
+
 static struct {
     uint8_t view;
     uint32_t prev_keys, prev_buttons, now;
@@ -63,6 +97,9 @@ static struct {
     uint32_t last_frame, serial;
     float amp[L_COUNT];
     int led_on;
+    /* knob label */
+    char osd[2][14];
+    uint32_t osd_until;
 } S;
 static uint8_t lcd[MM_LCD_H][MM_LCD_W / 8];
 
@@ -80,9 +117,14 @@ static uint8_t sample_step(unsigned i, int avoid)
 {
     float p[MM_TOKENS], sum = 0.0f;
     mm_predict(S.toks, S.len, i, p);
+    /* K3 MUTATE sets how adventurous the choice is, K4 NOTES how often a rest wins */
+    static const float rest_bias[11] = { 3.0f, 2.3f, 1.8f, 1.4f, 1.15f, 1.0f, 0.8f, 0.62f, 0.48f, 0.36f, 0.26f };
     for (unsigned t = 0; t < MM_TOKENS; ++t) {
-        p[t] = tok_allowed(t) && (int)t != avoid ? p[t] : 0.0f;
-        sum += p[t];
+        float q = tok_allowed(t) && (int)t != avoid ? p[t] : 0.0f;
+        if (K.mutate <= 3) q *= q;                    /* safe: the model's favourites */
+        else if (K.mutate >= 8) q = sqrtf_(q);        /* wild: the long tail too */
+        if (t == MM_REST) q *= rest_bias[K.notes + 5];
+        p[t] = q; sum += q;
     }
     if (sum <= 0.0f) return MM_REST;
     float r = rndf() * sum;
@@ -209,16 +251,21 @@ static void develop(void)
 {
     ++S.reps;
     if (S.rec || ms_pending()) return;
-    unsigned changes = 1u + (rndf() < 0.3f ? 1u : 0u);
+    if (K.mutate == 0) return;                   /* K3 at zero: the loop is frozen */
+    unsigned changes = K.mutate <= 2 ? (rndf() < 0.5f ? 1u : 0u)
+                     : K.mutate <= 6 ? 1u + (rndf() < 0.3f ? 1u : 0u)
+                     : 2u + (unsigned)(K.mutate - 7) / 2u + (rndf() < 0.5f ? 1u : 0u);
     for (unsigned c = 0; c < changes; ++c) change_one();
     /* hypnotic means sparse: an answer much busier than the motif loses a note */
     unsigned seed_n = 0, ans_n = 0;
     for (unsigned i = 0; i < S.half; ++i) { seed_n += S.toks[i] != MM_REST; ans_n += S.toks[S.half + i] != MM_REST; }
-    if (ans_n > seed_n + 2u) {
+    int target = (int)seed_n + 2 + K.notes;
+    if (target < 1) target = 1;
+    if ((int)ans_n > target) {
         unsigned k = rndn(ans_n);
         for (unsigned i = S.half; i < S.len; ++i) if (S.toks[i] && !k--) { S.toks[i] = MM_REST; break; }
     }
-    if (rndf() < 0.45f) {                        /* drift back towards the first answer */
+    if (rndf() < (K.mutate >= 8 ? 0.15f : 0.45f)) {   /* drift back towards the first answer */
         for (unsigned tries = 0; tries < 8; ++tries) {
             unsigned i = S.half + rndn(S.len - S.half);
             if (S.toks[i] != S.orig[i]) { S.toks[i] = S.orig[i]; break; }
@@ -432,6 +479,97 @@ static void leds(void)
     }
 }
 
+/* ------------------------------------------------------------- knobs */
+static void s_copy(char *d, const char *a) { while ((*d++ = *a++)) {} }
+static void s_cat(char *d, const char *a) { while (*d) ++d; s_copy(d, a); }
+static void put_num(char *d, int v, int sign)
+{
+    char tmp[8]; unsigned n = 0, neg = v < 0;
+    unsigned u = (unsigned)(neg ? -v : v);
+    do { tmp[n++] = (char)('0' + u % 10u); u /= 10u; } while (u);
+    while (*d) ++d;
+    if (neg) *d++ = '-'; else if (sign && v > 0) *d++ = '+';
+    while (n) *d++ = tmp[--n];
+    *d = 0;
+}
+static void osd(const char *a, int v, int sign, const char *b)
+{
+    s_copy(S.osd[0], a);
+    if (v != 0x7fff) { s_cat(S.osd[0], " "); put_num(S.osd[0], v, sign); }
+    s_copy(S.osd[1], b ? b : "");
+    S.osd_until = S.now + 1200u;
+}
+static int clampi(int v, int lo, int hi) { return v < lo ? lo : v > hi ? hi : v; }
+
+static void apply_sound(void)
+{
+    unsigned a = (unsigned)K.sound / MORPH_STEPS, b = (a + 1u) % N_TIMBRES;
+    float f = (float)(K.sound % MORPH_STEPS) / (float)MORPH_STEPS;
+    const timbre_t *x = &TIMBRES[a], *y = &TIMBRES[b];
+#define MIX(field) (x->field + (y->field - x->field) * f)
+    ms_set_lead(MIX(ratio), MIX(depth), MIX(tone), MIX(decay_s), MIX(idx_s), (float)K.gate / 100.0f);
+#undef MIX
+}
+static void apply_fx(void) { ms_set_fx((float)K.filter / 10.0f, (float)K.drive / 10.0f); }
+
+static void knobs_default(void)
+{
+    K.tempo = MS_BPM; K.gate = 55; K.sound = 0; K.filter = 0; K.drive = 0; K.mutate = 5; K.notes = 0;
+    ms_set_tempo((float)K.tempo); apply_sound(); apply_fx();
+}
+
+static void knobs(const int16_t *enc)
+{
+    if (!enc) return;
+    if (enc[JK_PRESET]) {
+        K.sound = ((K.sound + enc[JK_PRESET]) % SOUND_POSITIONS + SOUND_POSITIONS) % SOUND_POSITIONS;
+        apply_sound();
+        unsigned a = (unsigned)K.sound / MORPH_STEPS, step = (unsigned)K.sound % MORPH_STEPS;
+        char line[14]; s_copy(line, TIMBRES[a].name);   /* longest: "HOLLOW>BELL" */
+        if (step) { s_cat(line, ">"); s_cat(line, TIMBRES[(a + 1u) % N_TIMBRES].name); }
+        osd("SOUND", K.sound + 1, 0, line);
+    }
+    if (enc[JK_K1]) {
+        K.filter = clampi(K.filter + enc[JK_K1], -10, 10); apply_fx();
+        osd(K.filter < 0 ? "LOW-PASS" : K.filter > 0 ? "HIGH-PASS" : "FILTER OFF", K.filter ? (K.filter < 0 ? -K.filter : K.filter) * 10 : 0x7fff, 0, "K1 FILTER");
+    }
+    if (enc[JK_K2]) {
+        K.drive = clampi(K.drive + enc[JK_K2], 0, 10); apply_fx();
+        osd("DRIVE", K.drive * 10, 0, "K2");
+    }
+    if (enc[JK_K3]) {
+        K.mutate = clampi(K.mutate + enc[JK_K3], 0, 10);
+        osd("MUTATE", K.mutate, 0, K.mutate == 0 ? "FROZEN" : K.mutate <= 3 ? "CALM" : K.mutate <= 7 ? "ALIVE" : "WILD");
+    }
+    if (enc[JK_K4]) {
+        K.notes = clampi(K.notes + enc[JK_K4], -5, 5);
+        osd("NOTES", K.notes, 1, K.notes < -1 ? "SPARSE" : K.notes > 1 ? "BUSY" : "BALANCED");
+    }
+    if (enc[JK_SELECT]) {
+        K.tempo = clampi(K.tempo + enc[JK_SELECT], 118, 140); ms_set_tempo((float)K.tempo);
+        osd("TEMPO", K.tempo, 0, "BPM");
+    }
+    if (enc[JK_ALGO]) {
+        K.gate = clampi(K.gate + 5 * enc[JK_ALGO], 15, 120); apply_sound();
+        osd("LENGTH", K.gate, 0, K.gate < 40 ? "STACCATO" : K.gate > 90 ? "LEGATO" : "PLUCK");
+    }
+}
+
+static void lcd_unset_rect(int x0, int y0, int x1, int y1)
+{
+    for (int y = y0; y < y1; ++y) for (int x = x0; x < x1; ++x)
+        if (x >= 0 && y >= 0 && x < MM_LCD_W && y < MM_LCD_H) lcd[y][x >> 3] &= (uint8_t)~(0x80u >> (x & 7));
+}
+static void draw_osd(void)
+{
+    if ((int32_t)(S.now - S.osd_until) >= 0) return;
+    int lines = S.osd[1][0] ? 2 : 1;
+    lcd_unset_rect(0, 0, MM_LCD_W, 2 + 9 * lines);
+    lcd_text_c(1, S.osd[0]);
+    if (lines > 1) lcd_text_c(10, S.osd[1]);
+    for (int x = 0; x < MM_LCD_W; x += 2) lcd_set(x, 2 + 9 * lines);
+}
+
 /* ------------------------------------------------------------- platform API */
 void johnny_init(uint32_t now)
 {
@@ -440,10 +578,11 @@ void johnny_init(uint32_t now)
     ms_init();
     S.view = MM_VIEW_START; S.now = now; S.led_on = -1;
     S.planned_for = 0xffffffffu; S.block_bar = 0xffffffffu;
+    knobs_default();
     draw_start(); ++S.serial;
 }
 
-void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons)
+void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons, const int16_t *enc)
 {
     S.now = now;
     rng_state ^= keys * 0x9e3779b9u;
@@ -458,6 +597,7 @@ void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons)
         johnny_init(now);
         return;
     }
+    if (S.view == MM_VIEW_WAVES) knobs(enc);
     ms_clock c = {0};
     if (ms_running()) ms_get_clock(&c);
     for (unsigned k = 0; k < MM_KEY_COUNT; ++k) {
@@ -480,7 +620,7 @@ void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons)
             if (S.seen_wraps != 0xffffffffu) develop();
             S.seen_wraps = c.wraps;
         }
-        if (now - S.last_frame >= 33u) { S.last_frame = now; draw_waves(now, c.mask); ++S.serial; }
+        if (now - S.last_frame >= 33u) { S.last_frame = now; draw_waves(now, c.mask); draw_osd(); ++S.serial; }
     } else if (S.view == MM_VIEW_START) {
         static uint32_t blink;
         if (now / 500u != blink) { blink = now / 500u; draw_start(); ++S.serial; }

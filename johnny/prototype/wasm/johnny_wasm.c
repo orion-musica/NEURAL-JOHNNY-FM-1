@@ -29,7 +29,11 @@ static uint16_t band[240 * 16];
 static uint32_t rgba[240 * 240];
 
 EXPORT("init") void w_init(uint32_t now) { johnny_init(now); }
-EXPORT("tick") void w_tick(uint32_t now, uint32_t keys, uint32_t buttons) { johnny_tick(now, keys, buttons); }
+EXPORT("tick") void w_tick(uint32_t now, uint32_t keys, uint32_t buttons, int e0, int e1, int e2, int e3, int e4, int e5, int e6)
+{
+    int16_t enc[7] = { (int16_t)e0, (int16_t)e1, (int16_t)e2, (int16_t)e3, (int16_t)e4, (int16_t)e5, (int16_t)e6 };
+    johnny_tick(now, keys, buttons, enc);
+}
 /* frames: a multiple of 128, at most 1024. Returns interleaved L/R floats. */
 EXPORT("render") float *w_render(unsigned frames)
 {

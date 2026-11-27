@@ -26,6 +26,11 @@ canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-
 .layers{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:14px}
 .layers span{font:10px 'Silkscreen',monospace;text-align:center;color:#4c5444;padding:3px 0;border-radius:3px;transition:color .15s,background .15s}
 .layers span.on{color:var(--ink);background:var(--lcd)}
+.knobs{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px}
+.knob{display:flex;flex-direction:column;align-items:center;gap:5px;font:9px 'Silkscreen',monospace;color:var(--dim);user-select:none}
+.knob button{width:42px;height:42px;border-radius:50%;border:1px solid #11140e;background:radial-gradient(circle at 35% 30%,#4a5240,#1c2018 70%);position:relative;cursor:ns-resize;touch-action:none;padding:0}
+.knob button::after{content:'';position:absolute;left:50%;top:5px;width:2px;height:12px;margin-left:-1px;background:var(--lcd);border-radius:1px;transform-origin:1px 16px;transform:rotate(var(--a,0deg))}
+.knob button:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 .home{display:block;margin:14px auto 0;font:12px 'Silkscreen',monospace;color:var(--lcd);background:#2b3125;border:1px solid var(--edge);border-radius:20px;min-height:44px;padding:0 22px;cursor:pointer}
 .home:focus-visible,.piano button:focus-visible,#start:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 .piano{display:flex;justify-content:center;height:96px;width:min(760px,100%);overflow-x:auto;padding-bottom:4px}
@@ -49,10 +54,11 @@ canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-
     <p class="brand">NEURAL JOHNNY &middot; FM-1</p>
     <div class="bezel"><canvas id="lcd" width="240" height="240" role="img" aria-label="Neural Johnny screen: one oscillator line for every sound that plays"></canvas></div>
     <div class="layers" id="layers" aria-label="Layers playing"></div>
+    <div class="knobs" id="knobs" aria-label="Knobs: drag up or down, scroll, or focus and use the arrow keys"></div>
     <button class="home" id="home">HOME</button>
   </div>
   <div class="piano" id="piano" aria-label="FM-1 keys, F3 to G5"></div>
-  <p class="hint">Play <b>1&ndash;16 notes</b> and stop: the model answers and keeps developing your motif, a new layer every 8 bars. Play a new melody at any time. Keys: <b>A W S E D F T G Y H U J K O L P ; '</b> from C4, <b>Z / X</b> octave, <b>Esc</b> home.</p>
+  <p class="hint">Play <b>1&ndash;16 notes</b> and stop: the model answers and keeps developing your motif, a new layer every 8 bars. Play a new melody at any time. Keys: <b>A W S E D F T G Y H U J K O L P ; '</b> from C4, <b>Z / X</b> octave, <b>Esc</b> home. Knobs: drag, scroll, or <b>1 2</b> filter, <b>3 4</b> drive, <b>5 6</b> mutate, <b>7 8</b> notes, <b>9 0</b> preset sound, <b>[ ]</b> tempo, <b>- =</b> length.</p>
 </main>
 <button id="start"><span><strong>NEURAL JOHNNY</strong><small>tap or press a key &middot; sound on</small></span></button>
 <script>
@@ -66,6 +72,9 @@ const img = ctx.createImageData(240,240);
 const layersEl = document.getElementById('layers');
 layersEl.innerHTML = NAMES.map(n => '<span>' + n + '</span>').join('');
 const layerSpans = [...layersEl.children];
+/* FM-1 encoder order: SELECT, ALGORITHM, K1..K4, PRESETS */
+const KNOBS = [['TEMPO',0,'[',']'],['LENGTH',1,'-','='],['FILTER',2,'1','2'],['DRIVE',3,'3','4'],['MUTATE',4,'5','6'],['NOTES',5,'7','8'],['PRESET',6,'9','0']];
+const enc = [0,0,0,0,0,0,0], angle = [0,0,0,0,0,0,0];
 let ex = null, mem = null, keys = 0, buttons = 0, kLatch = 0, bLatch = 0, base = 60, started = false, lastSerial = -1, lastLayers = -1;
 const t0 = performance.now();
 const now = () => Math.floor(performance.now() - t0);
@@ -102,7 +111,7 @@ async function start(){
   try { await ac.resume(); } catch(e) {}
   ex.init(now());
   /* latch: a tap shorter than one tick still reaches the app */
-  setInterval(() => { ex.tick(now(), keys | kLatch, buttons | bLatch); kLatch = bLatch = 0; }, 5);
+  setInterval(() => { ex.tick(now(), keys | kLatch, buttons | bLatch, ...enc); kLatch = bLatch = 0; enc.fill(0); }, 5);
   requestAnimationFrame(draw);
 }
 const keyIndex = k => { const i = PIANO.indexOf(k); if(i < 0) return -1; const idx = base - 53 + i; return idx >= 0 && idx < 27 ? idx : -1; };
@@ -112,6 +121,7 @@ function down(e){
   if(!started){ e.preventDefault(); start(); return; }
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
   if(k === 'Escape'){ buttons |= 1 << HOME; bLatch |= 1 << HOME; held.set(e.code, {b: HOME}); e.preventDefault(); return; }
+  for(const [, idx, dn, upk] of KNOBS) if(k === dn || k === upk){ turn(idx, k === upk ? 1 : -1); e.preventDefault(); return; }
   if(k === 'z' || k === 'x'){ base = Math.max(48, Math.min(72, base + (k === 'z' ? -12 : 12))); return; }
   const i = keyIndex(k);
   if(i >= 0){ keys |= 1 << i; kLatch |= 1 << i; held.set(e.code, {i}); e.preventDefault(); }
@@ -128,6 +138,27 @@ const press = (el, on, off) => {
   el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off);
 };
 press(document.getElementById('home'), () => { buttons |= 1 << HOME; bLatch |= 1 << HOME; }, () => buttons &= ~(1 << HOME));
+const knobEls = [];
+function turn(idx, d){
+  if(!started){ start(); return; }
+  enc[idx] += d; angle[idx] = Math.max(-150, Math.min(150, angle[idx] + d * 12));
+  if(idx === 6) angle[idx] = (angle[idx] + 360) % 360;
+  knobEls[idx].style.setProperty('--a', angle[idx] + 'deg');
+}
+const knobsEl = document.getElementById('knobs');
+for(const [name, idx] of KNOBS){
+  const w = document.createElement('div'); w.className = 'knob';
+  const b = document.createElement('button'); b.setAttribute('aria-label', name + ' knob');
+  w.appendChild(b); w.appendChild(document.createTextNode(name)); knobsEl.appendChild(w);
+  knobEls[idx] = b;
+  let y0 = null;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); if(!started){ start(); return; } y0 = e.clientY; b.setPointerCapture(e.pointerId); });
+  b.addEventListener('pointermove', e => { if(y0 === null) return; const d = Math.trunc((y0 - e.clientY) / 10); if(d){ turn(idx, d); y0 -= d * 10; } });
+  b.addEventListener('pointerup', () => y0 = null); b.addEventListener('pointercancel', () => y0 = null);
+  b.addEventListener('wheel', e => { e.preventDefault(); turn(idx, e.deltaY < 0 ? 1 : -1); }, {passive:false});
+  b.addEventListener('keydown', e => { if(e.key === 'ArrowUp' || e.key === 'ArrowRight'){ turn(idx, 1); e.preventDefault(); e.stopPropagation(); }
+    else if(e.key === 'ArrowDown' || e.key === 'ArrowLeft'){ turn(idx, -1); e.preventDefault(); e.stopPropagation(); } });
+}
 const piano = document.getElementById('piano');
 for(let i = 0; i < 27; i++){
   const m = (53 + i) % 12, b = document.createElement('button');
