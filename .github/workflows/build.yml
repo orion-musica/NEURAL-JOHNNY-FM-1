@@ -7,6 +7,7 @@ name: build
 on:
   push:
     branches: [main]
+    tags: ['v*']          # a version tag also publishes a GitHub Release with the firmware
   workflow_dispatch:
 
 permissions:
@@ -15,6 +16,8 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    permissions:
+      contents: write     # only used by the release step on version tags
     steps:
       - uses: actions/checkout@v4
 
@@ -51,12 +54,38 @@ jobs:
             docs/install/flasher.html
           if-no-files-found: error
 
+      - name: GitHub Release (version tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = '${{ github.ref_name }}'
+          $version = $tag.TrimStart('v')
+          # Release notes: this version's section of CHANGELOG.md
+          $lines = Get-Content CHANGELOG.md
+          $start = ($lines | Select-String -Pattern ('^## ' + [regex]::Escape($version) + '\b') | Select-Object -First 1).LineNumber
+          $notes = @()
+          if ($start) {
+            for ($i = $start; $i -lt $lines.Count; $i++) { if ($lines[$i] -match '^## ') { break }; $notes += $lines[$i] }
+          }
+          $sha = (Get-Content docs/downloads/SHA256SUMS.txt -Raw).Trim()
+          $notes += ''
+          $notes += '### Install'
+          $notes += 'Open the web installer: https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/install/ (desktop Chrome or Edge, USB). Or flash `NeuralJohnny.fwsc` by hand.'
+          $notes += ''
+          $notes += ('SHA-256: `' + $sha + '`')
+          Set-Content -Path release-notes.md -Value $notes -Encoding utf8
+          Copy-Item docs/install/flasher.html NeuralJohnny-installer.html
+          gh release create $tag docs/downloads/NeuralJohnny.fwsc docs/downloads/SHA256SUMS.txt docs/downloads/JOHNNY_README.md NeuralJohnny-installer.html --title ('Neural Johnny ' + $version) --notes-file release-notes.md
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs
 
   pages:
     needs: build
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       pages: write
