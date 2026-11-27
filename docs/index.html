@@ -59,6 +59,7 @@ footer a{color:var(--dim)}
     <li><b>SELECT</b>: tempo 118&ndash;140 BPM. <b>ALGORITHM</b>: note length, staccato to legato.</li>
   </ul>
   <p>Every sound is one oscillator line in square pixels on a two-tone phone LCD. That is the whole picture.</p>
+  <p>All 41 key and button lights fire like a neural net in time with the music: every note sends an impulse running along the keys, branching to the buttons, while the kick fires synaptic bursts and each bar line sends a wave through the whole keyboard.</p>
 
   <h2>The model</h2>
   <p>A small neural network of about <b>8,400 weights in 8-bit integers</b> runs on the FM-1 itself. It looks at the last few 16ths, the same step one bar and half a phrase back, and where it is in the bar, and picks the next note or a rest. It is kept inside the key and range of your melody. Trained on a rule-built set of hypnotic techno motifs; you can retrain it on your own loops.</p>

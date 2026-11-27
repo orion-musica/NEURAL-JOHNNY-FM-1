@@ -34,6 +34,14 @@ SCREEN
   One oscillator line per sound, in 80 x 80 square pixels on a two-tone green LCD.
   A resting sound's line disappears. The key under the melody note lights up.
 
+LIGHTS
+  All 41 LEDs (27 keys, 14 buttons) fire as a neural net, in time with the music:
+  every melody note sends impulses along the keys from its own key, branching now and
+  then to the button row; the kick fires short synaptic bursts, the bass blinks its
+  root, hats and perc fire single neurons, the clap runs along the buttons, and every
+  bar line sends a wave through the whole net. Your own notes fire impulses too.
+  On the start screen the net rests and sparks slowly.
+
 CONTROLS
   Keys       play
   PRESETS    the melody's sound evolves: 8 FM timbres (SOFT, HOLLOW, BELL, GLASS,

@@ -26,6 +26,10 @@ canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-
 .layers{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:14px}
 .layers span{font:10px 'Silkscreen',monospace;text-align:center;color:#4c5444;padding:3px 0;border-radius:3px;transition:color .15s,background .15s}
 .layers span.on{color:var(--ink);background:var(--lcd)}
+.btnleds{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:12px}
+.btnleds i{height:6px;border-radius:3px;background:#2b3125;transition:background .06s}
+.btnleds i.lit{background:var(--lcd);box-shadow:0 0 8px var(--lcd)}
+.piano button.lit{box-shadow:0 0 14px 2px var(--lcd)}
 .knobs{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px}
 .knob{display:flex;flex-direction:column;align-items:center;gap:5px;font:9px 'Silkscreen',monospace;color:var(--dim);user-select:none}
 .knob button{width:42px;height:42px;border-radius:50%;border:1px solid #11140e;background:radial-gradient(circle at 35% 30%,#4a5240,#1c2018 70%);position:relative;cursor:ns-resize;touch-action:none;padding:0}
@@ -54,6 +58,7 @@ canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-
     <p class="brand">NEURAL JOHNNY &middot; FM-1</p>
     <div class="bezel"><canvas id="lcd" width="240" height="240" role="img" aria-label="Neural Johnny screen: one oscillator line for every sound that plays"></canvas></div>
     <div class="layers" id="layers" aria-label="Layers playing"></div>
+    <div class="btnleds" id="btnleds" aria-hidden="true"></div>
     <div class="knobs" id="knobs" aria-label="Knobs: drag up or down, scroll, or focus and use the arrow keys"></div>
     <button class="home" id="home">HOME</button>
   </div>
@@ -72,6 +77,9 @@ const img = ctx.createImageData(240,240);
 const layersEl = document.getElementById('layers');
 layersEl.innerHTML = NAMES.map(n => '<span>' + n + '</span>').join('');
 const layerSpans = [...layersEl.children];
+const btnLedsEl = document.getElementById('btnleds');
+btnLedsEl.innerHTML = '<i></i>'.repeat(14);
+const btnLeds = [...btnLedsEl.children];
 /* FM-1 encoder order: SELECT, ALGORITHM, K1..K4, PRESETS */
 const KNOBS = [['TEMPO',0,'[',']'],['LENGTH',1,'-','='],['FILTER',2,'1','2'],['DRIVE',3,'3','4'],['MUTATE',4,'5','6'],['NOTES',5,'7','8'],['PRESET',6,'9','0']];
 const enc = [0,0,0,0,0,0,0], angle = [0,0,0,0,0,0,0];
@@ -79,7 +87,7 @@ let ex = null, mem = null, keys = 0, buttons = 0, kLatch = 0, bLatch = 0, base =
 const t0 = performance.now();
 const now = () => Math.floor(performance.now() - t0);
 const env = {
-  johnny_hal_led(i, on){ if(i < 14) return; const k = document.querySelector('[data-k="' + (i - 14) + '"]'); if(k) k.classList.toggle('lit', !!on); }
+  johnny_hal_led(i, on){ const k = i < 14 ? btnLeds[i] : document.querySelector('[data-k="' + (i - 14) + '"]'); if(k) k.classList.toggle('lit', !!on); }
 };
 function draw(){
   if(!ex) return;

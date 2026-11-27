@@ -23,6 +23,7 @@ Each sound is a waving oscillator line in square pixels on a two-tone
 | `app/johnny/johnny_weights.h` | the trained weights (generated) |
 | `app/johnny/johnny_synth.c` | 8-layer synth and 16th sequencer, runs in the audio interrupt |
 | `app/johnny/johnny_screen.c` | 80×80 phone LCD → 240×240 RGB565 bands |
+| `app/johnny/johnny_lights.c` | neural light waves over all 41 key and button LEDs, in time with the music |
 | `app/johnny/johnny_fm1.c` | FM-1 adapter: panel, LEDs, screen, MASTER knob |
 | `app/screen.c`, `app/audio_output.c` | two small hooks (`NEURAL_JOHNNY` in `app/johnny/johnny_fm1.h`) |
 | `johnny/tools/train_model.py` | builds the training set, trains the model, writes `johnny_weights.h` |
@@ -45,7 +46,7 @@ Locally on Windows: `INSTALL-JOHNNY.bat`.
 Browser version and PC test (Linux/macOS, clang + gcc):
 
     sh johnny/tools/build_wasm.sh
-    gcc -O2 -DFM1_HOST_TEST -Iapp/johnny johnny/host/johnny_host.c app/johnny/johnny_{app,model,synth,screen}.c -lm -o johnny/host/johnny_host
+    gcc -O2 -DFM1_HOST_TEST -Iapp/johnny johnny/host/johnny_host.c app/johnny/johnny_{app,model,synth,screen,lights}.c -lm -o johnny/host/johnny_host
     ./johnny/host/johnny_host johnny/host 84
 
 Retrain the model (Python 3 + numpy, about 30 s):

@@ -9,7 +9,8 @@
 #include "johnny_synth.h"
 #include "johnny_screen.h"
 
-void johnny_hal_led(unsigned index, int on) { (void)index; (void)on; }
+static uint64_t led_state; static unsigned led_writes;
+void johnny_hal_led(unsigned index, int on) { if (on) led_state |= 1ull << index; else led_state &= ~(1ull << index); ++led_writes; }
 
 typedef struct { double ms; int key; int dur_steps; } ev;
 #define STEP_MS (60000.0 / 132.0 / 4.0)
@@ -74,7 +75,7 @@ int main(int argc, char **argv)
             fprintf(log, "bar %3u  layers ", c.bar);
             static const char *nm = "LKBHDCEP";
             for (int l = 0; l < 8; ++l) fputc((c.mask >> l) & 1 ? nm[l] : '.', log);
-            fprintf(log, "  repeats %u  ", johnny_repeats());
+            fprintf(log, "  leds %2d writes %5u repeats %u  ", __builtin_popcountll(led_state), led_writes, johnny_repeats());
             unsigned len, tonic; const uint8_t *t = johnny_debug_phrase(&len, &tonic);
             static const char *pc[12] = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
             for (unsigned i = 0; i < len; ++i) {

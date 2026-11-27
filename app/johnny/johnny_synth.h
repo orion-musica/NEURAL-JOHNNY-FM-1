@@ -54,5 +54,7 @@ void ms_get_clock(ms_clock *c);
 /* Envelope level (0..1) and current note of every layer, for the screen. */
 float ms_level(unsigned layer);
 unsigned ms_pitch(unsigned layer);
+/* Hit counter of a layer (wraps at 256) and the note of its last hit. */
+unsigned ms_hits(unsigned layer, unsigned *note);
 
 FM1_AUDIO_CODE void johnny_audio_render(int32_t *stereo_q23, unsigned frames);

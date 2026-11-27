@@ -25,6 +25,7 @@
 #include "johnny_model.h"
 #include "johnny_synth.h"
 #include "johnny_font.h"
+#include "johnny_lights.h"
 #include <string.h>
 
 /* ------------------------------------------------------------- helpers */
@@ -96,7 +97,6 @@ static struct {
     /* screen */
     uint32_t last_frame, serial;
     float amp[L_COUNT];
-    int led_on;
     /* knob label */
     char osd[2][14];
     uint32_t osd_until;
@@ -462,22 +462,6 @@ static void draw_waves(uint32_t now, unsigned mask)
     }
 }
 
-static void leds(void)
-{
-    float lvl = ms_level(L_LEAD);
-    int want = -1;
-    if (S.view == MM_VIEW_WAVES && lvl > 0.25f) {
-        int k = (int)ms_pitch(L_LEAD) - MM_KEY_LOWEST_MIDI;
-        while (k < 0) k += 12;
-        while (k >= MM_KEY_COUNT) k -= 12;
-        want = 14 + k;
-    }
-    if (want != S.led_on) {
-        if (S.led_on >= 0) johnny_hal_led((unsigned)S.led_on, 0);
-        if (want >= 0) johnny_hal_led((unsigned)want, 1);
-        S.led_on = want;
-    }
-}
 
 /* ------------------------------------------------------------- knobs */
 static void s_copy(char *d, const char *a) { while ((*d++ = *a++)) {} }
@@ -576,7 +560,8 @@ void johnny_init(uint32_t now)
     memset(&S, 0, sizeof S);
     rng_state ^= now * 2654435761u + 1u;
     ms_init();
-    S.view = MM_VIEW_START; S.now = now; S.led_on = -1;
+    S.view = MM_VIEW_START; S.now = now;
+    jl_init();
     S.planned_for = 0xffffffffu; S.block_bar = 0xffffffffu;
     knobs_default();
     draw_start(); ++S.serial;
@@ -625,7 +610,12 @@ void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons, const int16_t *e
         static uint32_t blink;
         if (now / 500u != blink) { blink = now / 500u; draw_start(); ++S.serial; }
     }
-    leds();
+    {   /* neural light waves on every key and button */
+        ms_clock lc = {0};
+        int playing = S.view == MM_VIEW_WAVES && ms_running();
+        if (playing) ms_get_clock(&lc);
+        jl_tick(now, playing, lc.bar, lc.step, down);
+    }
 }
 
 const uint8_t *johnny_lcd(void) { return &lcd[0][0]; }

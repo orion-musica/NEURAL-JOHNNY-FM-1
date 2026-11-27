@@ -32,6 +32,7 @@ static volatile uint8_t cur_step, cur_pos, mask;
 static volatile float step_acc;
 static volatile float vis_level[L_COUNT];
 static volatile uint8_t vis_pitch[L_COUNT];
+static volatile uint8_t hits[L_COUNT], hit_note[L_COUNT];
 
 /* ------------------------------------------------------------ tables */
 static float note_hz[128];
@@ -109,21 +110,21 @@ static FM1_AUDIO_CODE void do_step(void)
     unsigned s = step_in_bar;
     if (p->len) {
         uint8_t n = p->note[pos & (p->len - 1u)];
-        if ((m & (1u << L_LEAD)) && !hold && n) fm_trigger(&lead, n, lead_gate);
+        if ((m & (1u << L_LEAD)) && !hold && n) { fm_trigger(&lead, n, lead_gate); hit_note[L_LEAD] = n; ++hits[L_LEAD]; }
         unsigned e = (pos + p->len - 3u) & (p->len - 1u);          /* dotted-8th echo */
         uint8_t en = p->note[e];
-        if ((m & (1u << L_ECHO)) && en && ((p->echo_keep[e >> 5] >> (e & 31u)) & 1u)) fm_trigger(&echo, en + 12u > 108u ? en : en + 12u, 0.4f);
+        if ((m & (1u << L_ECHO)) && en && ((p->echo_keep[e >> 5] >> (e & 31u)) & 1u)) { fm_trigger(&echo, en + 12u > 108u ? en : en + 12u, 0.4f); hit_note[L_ECHO] = en; ++hits[L_ECHO]; }
     }
-    if ((m & (1u << L_KICK)) && (s & 3u) == 0) { kick_env = 1.0f; kick_hz = 165.0f; kick_click = 1.0f; duck = 1.0f; }
+    if ((m & (1u << L_KICK)) && (s & 3u) == 0) { kick_env = 1.0f; kick_hz = 165.0f; kick_click = 1.0f; duck = 1.0f; ++hits[L_KICK]; }
     if ((m & (1u << L_BASS)) && bit(p->bass_bits, s)) {
         unsigned r = 36u + p->root;
-        fm_trigger(&bass, r, 0.5f);
+        fm_trigger(&bass, r, 0.5f); ++hits[L_BASS];
     }
-    if ((m & (1u << L_HAT)) && (s & 3u) == 2) hat_env = 1.0f;
-    if ((m & (1u << L_CLAP)) && (s & 7u) == 4) { clap_env = 1.0f; clap_t = 0.0f; }
+    if ((m & (1u << L_HAT)) && (s & 3u) == 2) { hat_env = 1.0f; ++hits[L_HAT]; }
+    if ((m & (1u << L_CLAP)) && (s & 7u) == 4) { clap_env = 1.0f; clap_t = 0.0f; ++hits[L_CLAP]; }
     if ((m & (1u << L_PERC)) && bit(p->perc_bits, s)) {
         unsigned r = 60u + p->root + ((s & 4u) ? 7u : 0u);
-        fm_trigger(&perc, r, 0.2f);
+        fm_trigger(&perc, r, 0.2f); hit_note[L_PERC] = (uint8_t)r; ++hits[L_PERC];
     }
     if (p->len) { pos = (uint8_t)((pos + 1u) & (p->len - 1u)); if (pos == 0) ++wraps; }
     if (++step_in_bar >= 16) { step_in_bar = 0; ++bar_count; }
@@ -285,4 +286,5 @@ void ms_get_clock(ms_clock *c)
     if (c->phase > 1.0f) c->phase = 1.0f;
 }
 float ms_level(unsigned layer) { return layer < L_COUNT ? vis_level[layer] : 0.0f; }
+unsigned ms_hits(unsigned layer, unsigned *note) { if (layer >= L_COUNT) return 0; if (note) *note = hit_note[layer]; return hits[layer]; }
 unsigned ms_pitch(unsigned layer) { return layer < L_COUNT ? vis_pitch[layer] : 0u; }
