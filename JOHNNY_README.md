@@ -1,5 +1,6 @@
 NEURAL JOHNNY - player notes
 ========================
+Beta 0.1, tested on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1).
 
 START
   The start screen shows the name, "PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON."
