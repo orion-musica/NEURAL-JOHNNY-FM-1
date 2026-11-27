@@ -8,7 +8,7 @@ K2 drive, K3 how much the model mutates, K4 how busy it plays, SELECT tempo, ALG
 length). Every sound is an oscillator line in square pixels on a two-tone 90s-phone LCD, and
 all 41 key and button lights fire like a neural net in time with the music. The 11 panel
 buttons FX..REC are drum pads: tap a groove and a second model continues it as an extra layer.
-OCT- mutes sounds one by one, OCT+ brings them back, both held = one random sound alone.
+OCT- mutes sounds one by one (the melody last), OCT+ brings them back, both held = one random sound alone.
 
 [**Play in the browser**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/play/) ·
 [**Install on the FM-1**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/install/) ·

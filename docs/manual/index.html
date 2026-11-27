@@ -207,10 +207,11 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <div class="table"><table>
 <thead><tr><th scope="col">Press</th><th scope="col">Does</th><th scope="col">Label</th></tr></thead>
 <tbody>
-<tr><td><kbd>OCT&minus;</kbd></td><td>Mutes the sound you hear that came in last. Press again for the one before, down to the last sound, which always stays. The <kbd>OCT&minus;</kbd> light stays on while anything is muted.</td><td><code>MUTE PERC</code></td></tr>
+<tr><td><kbd>OCT&minus;</kbd></td><td>Mutes the sound you hear that came in last. Press again for the one before. The melody, the oldest sound, goes last; after it there is silence (<code>ALL MUTED</code>) until you press <kbd>OCT+</kbd> or play a new melody. The <kbd>OCT&minus;</kbd> light stays on while anything is muted.</td><td><code>MUTE PERC</code></td></tr>
 <tr><td><kbd>OCT+</kbd></td><td>Brings back the sound muted last, then the one before.</td><td><code>UNMUTE PERC</code></td></tr>
 <tr><td><kbd>OCT&minus;</kbd> + <kbd>OCT+</kbd> held</td><td>Only one random sound from those playing stays, for as long as you hold both; breaths are skipped for it. Let go and everything is back exactly as before. The <kbd>OCT+</kbd> light is on while you hold.</td><td><code>ONLY BASS</code>, then <code>ALL BACK</code></td></tr>
 </tbody></table></div>
+<p>If the melody is muted and you play new notes on the keys, the melody comes back from your first note, and the model carries the new motif on as usual.</p>
 <p>Press both at about the same moment (within 70 ms) for the hold; a single press acts a moment after you press it. The arrangement keeps going underneath: new sounds still come in and take breaths while others are muted.</p>
 
 <h2 id="screen">12. The screen</h2>

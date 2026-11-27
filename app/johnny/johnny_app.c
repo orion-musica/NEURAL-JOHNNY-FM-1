@@ -609,7 +609,8 @@ static void draw_osd(void)
 /* ------------------------------------------------------------- OCT- / OCT+ */
 static const char *const LAYER_NAME[L_COUNT] = { "MELODY", "KICK", "BASS", "HATS", "DRONE", "CLAP", "ECHO", "PERC", "GROOVE" };
 
-/* OCT-: mute the sounds one by one, newest first (one always stays).
+/* OCT-: mute the sounds one by one, newest first, the melody last (then
+ * silence: play a new melody, or OCT+).
  * OCT+: bring them back, last muted first.
  * OCT- and OCT+ held together: only one random sound plays while you hold. */
 static void oct_buttons(uint32_t buttons, uint32_t bdown, const ms_clock *c)
@@ -646,7 +647,7 @@ static void oct_buttons(uint32_t buttons, uint32_t bdown, const ms_clock *c)
     S.oct_first = 0xff;
     if (which == MM_B_OCT_DOWN) {
         unsigned left = S.active & ~S.user_mute & c->mask;   /* what you hear right now */
-        if (bit_count(left) <= 1u) { osd("LAST SOUND", 0x7fff, 0, "STAYS"); return; }
+        if (!left) { osd("ALL MUTED", 0x7fff, 0, "PLAY OR OCT+"); return; }
         for (int i = (int)S.n_entry - 1; i >= 0; --i) {
             unsigned l = S.entry[i];
             if ((left >> l) & 1u) {
@@ -663,6 +664,18 @@ static void oct_buttons(uint32_t buttons, uint32_t bdown, const ms_clock *c)
         osd("UNMUTE", 0x7fff, 0, LAYER_NAME[l]);
     }
     apply_now(c); plan_bar(c->bar + 1u);
+}
+
+/* The melody was muted with OCT- and you play again: it is back from your
+ * first note (the model's answer follows when you stop). */
+static void unmute_melody(const ms_clock *c)
+{
+    S.user_mute &= (uint16_t)~(1u << L_LEAD);
+    unsigned n = 0;
+    for (unsigned i = 0; i < S.n_muted; ++i) if (S.mute_stack[i] != L_LEAD) S.mute_stack[n++] = S.mute_stack[i];
+    S.n_muted = (uint8_t)n;
+    apply_now(c); plan_bar(c->bar + 1u);
+    osd("UNMUTE", 0x7fff, 0, LAYER_NAME[L_LEAD]);
 }
 
 /* ------------------------------------------------------------- platform API */
@@ -707,7 +720,10 @@ void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons, const int16_t *e
                 S.view = MM_VIEW_WAVES; ++S.serial;
                 ms_start();
                 capture_note(midi, &c, 1);
-            } else capture_note(midi, &c, 0);
+            } else {
+                capture_note(midi, &c, 0);
+                if ((S.user_mute >> L_LEAD) & 1u) unmute_melody(&c);   /* a new melody brings the melody back */
+            }
         }
     }
     if (S.view == MM_VIEW_WAVES && ms_running()) {

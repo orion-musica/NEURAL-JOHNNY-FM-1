@@ -74,9 +74,14 @@ int main(int argc, char **argv)
                 }
             }
             /* OCT- three times at bars 30, 31, 32; OCT+ once at bar 33; both held in bars 36-37 */
-            for (int b = 30; b <= 32; ++b) { double at = t0 + b * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 0; }
-            { double at = t0 + 33 * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 1; }
-            { double at = t0 + 36 * 16 * STEP_MS + 100; if (now >= at && now < at + 2 * 16 * STEP_MS) buttons |= 3u; }
+            const char *script = getenv("OCT_SCRIPT");   /* "mute-all": OCT- ten times in bars 40-49 */
+            if (script && script[0] == 'm') {
+                for (int b = 40; b <= 49; ++b) { double at = t0 + b * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 0; }
+            } else {
+                for (int b = 30; b <= 32; ++b) { double at = t0 + b * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 0; }
+                { double at = t0 + 33 * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 1; }
+                { double at = t0 + 36 * 16 * STEP_MS + 100; if (now >= at && now < at + 2 * 16 * STEP_MS) buttons |= 3u; }
+            }
         }
         johnny_tick((uint32_t)now, keys, buttons, enc);
         memset(block, 0, sizeof block);
