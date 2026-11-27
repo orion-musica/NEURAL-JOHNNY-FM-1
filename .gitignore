@@ -35,3 +35,4 @@ id_ed25519
 /johnny/host/*.wav
 /johnny/host/*.raw
 johnny/tools/model_float.npz
+johnny/tools/drums_float.npz

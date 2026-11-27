@@ -79,7 +79,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
   <div class="wrap">
     <a class="brand" href="./">NEURAL JOHNNY</a>
     <div class="links">
-      <a href="#features">Features</a><a href="#play">How it plays</a><a href="#knobs">Knobs</a><a href="#screens">Screens</a><a href="#lights">Lights</a><a href="#install">Install</a><a href="manual/">Manual</a><a href="play/">Try it</a><a id="gh" href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1">GitHub</a>
+      <a href="#features">Features</a><a href="#play">How it plays</a><a href="#knobs">Knobs</a><a href="#pads">Pads</a><a href="#screens">Screens</a><a href="#lights">Lights</a><a href="#install">Install</a><a href="manual/">Manual</a><a href="play/">Try it</a><a id="gh" href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1">GitHub</a>
     </div>
   </div>
 </nav>
@@ -89,7 +89,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
     <div>
       <p class="kicker">FIRMWARE · M-VAVE FM-1 · BETA 0.1</p>
       <h1>NEURAL<small>JOHNNY</small></h1>
-      <p class="lead">Play 1 to 16 notes. A tiny neural network inside the FM-1 keeps your melody going as a hypnotic techno track: it answers you, changes a note or two every time round, brings in a new sound every 8 bars and lets them breathe. Turn the knobs to steer it. Every sound is an oscillator line on a 90s phone screen, and the keys fire like neurons.</p>
+      <p class="lead">Play 1 to 16 notes. A tiny neural network inside the FM-1 keeps your melody going as a hypnotic techno track: it answers you, changes a note or two every time round, brings in a new sound every 8 bars and lets them breathe. Tap a groove on the panel buttons and it continues that too. Turn the knobs to steer it. Every sound is an oscillator line on a 90s phone screen, and the keys fire like neurons.</p>
       <div class="actions">
         <a class="btn primary" href="install/">INSTALL ›</a>
         <a class="btn" href="play/">TRY IN BROWSER</a>
@@ -118,6 +118,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
       <div class="card"><h3>Cut in any time</h3><p>Play a new melody while it runs. The groove keeps going, the model waits, then carries your new idea on.</p></div>
       <div class="card"><h3>A sound that evolves</h3><p><b>PRESETS</b> morphs the melody's sound in 64 small steps through eight FM timbres, from SOFT to BELL, ACID and VAPOUR.</p></div>
       <div class="card"><h3>Hands on the model</h3><p><b>K3</b> sets how much it mutates, from a frozen loop to wild. <b>K4</b> makes it play sparser or busier. Plus filter, drive, tempo and note length.</p></div>
+      <div class="card"><h3>Your drums, continued</h3><p>The 11 buttons from FX to REC are drum pads: kick, snare, clap, rim, hats, toms, ride, shaker, cowbell. Tap a groove and a second model keeps it going as an extra layer.</p></div>
+      <div class="card"><h3>Mute and solo</h3><p><b>OCT&minus;</b> takes the sounds out one by one, <b>OCT+</b> brings them back. Hold both: only one random sound plays until you let go.</p></div>
       <div class="card"><h3>Neural lights</h3><p>All 41 key and button lights fire in time: every note sends an impulse along the keys, every bar line a wave through the panel.</p></div>
     </div>
   </div>
@@ -159,6 +161,31 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
   </div>
 </section>
 
+<section id="pads">
+  <div class="wrap">
+    <h2>Drum pads and OCT</h2>
+    <p class="sub">The buttons above the screen play drums. Tap 1 or 2 bars and stop, just like the melody: the groove model answers with a varied copy and develops it a little every repeat. Your groove is an extra layer, on top of Johnny's own kick, hats, clap and perc. While you tap a new groove, the old one waits.</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">Button</th><th scope="col">Plays</th><th scope="col">Button</th><th scope="col">Plays</th></tr></thead>
+      <tbody>
+        <tr><td>FX</td><td>Kick</td><td>SAVE</td><td>Low tom</td></tr>
+        <tr><td>SCL</td><td>Snare</td><td>ARP</td><td>High tom</td></tr>
+        <tr><td>ENV</td><td>Clap</td><td>SEQ</td><td>Ride</td></tr>
+        <tr><td>LFO</td><td>Rim</td><td>PLAY</td><td>Shaker</td></tr>
+        <tr><td>EDIT</td><td>Closed hat</td><td>REC</td><td>Cowbell</td></tr>
+        <tr><td>GLO</td><td>Open hat</td><td>HOME</td><td>Back to the start</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="grid3" style="margin-top:18px">
+      <div class="card"><h3>OCT&minus;</h3><p>Mutes the sound you hear that came in last, then the one before, down to one sound. Its light stays on while anything is muted.</p></div>
+      <div class="card"><h3>OCT+</h3><p>Brings the muted sounds back, the last muted first.</p></div>
+      <div class="card"><h3>Both, held</h3><p>Only one random sound that is playing stays, for as long as you hold. Let go and everything is back as it was.</p></div>
+    </div>
+  </div>
+</section>
+
 <section id="screens">
   <div class="wrap">
     <h2>Screens</h2>
@@ -191,6 +218,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
         <tr><td>CLAP</td><td>An impulse runs along the button row.</td></tr>
         <tr><td>ECHO</td><td>A slower impulse on the buttons.</td></tr>
         <tr><td>YOUR NOTES</td><td>Impulses from the key you play.</td></tr>
+        <tr><td>DRUM PADS</td><td>Each pad's own light flashes on its hits, yours and the model's; kick, snare and clap also send a small impulse.</td></tr>
         <tr><td>START SCREEN</td><td>The net rests and sparks slowly.</td></tr>
       </tbody>
     </table>
@@ -219,6 +247,8 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
     <div class="grid2" style="margin-top:18px">
       <div class="card"><h3>What the model learned</h3><p>It was trained on a rule-built set of hypnotic techno motifs: minor modes, pedal tones, short cells repeated with small changes. Anyone can retrain it on their own loops with one Python script.</p></div>
       <div class="card"><h3>Kept in key</h3><p>The model only picks notes from the scale and range of what you played, so even a WILD setting stays musical.</p></div>
+      <div class="card"><h3>Two models</h3><p>The melody model (about 8,400 weights) and the groove model (about 4,400 weights) are separate. The groove model gives each of the 11 drums its own chance per sixteenth and mostly keeps to the drums you played.</p></div>
+      <div class="card"><h3>Buttons are not pads</h3><p>The FM-1's buttons have no velocity and a firmer press than rubber pads. Every hit snaps to a sixteenth, so a rough tap still lands in time.</p></div>
       <div class="card"><h3>Its own sounds</h3><p>Johnny plays its own small synth (FM melody, kick, bass, noise drums, drone). The FM-1's DX7 engine stays silent; MASTER is still the volume.</p></div>
       <div class="card"><h3>Saves nothing</h3><p>Neural Johnny does not write to the FM-1's memory. Each session starts fresh from the start screen.</p></div>
     </div>

@@ -11,10 +11,10 @@ static ms_phrase phr[2];
 static volatile uint8_t live_buf, pending, pend_hold_release, hold;
 static volatile uint8_t pend_pos;
 static volatile uint32_t plan_bar = 0xffffffffu;
-static volatile uint8_t plan_mask;
+static volatile uint16_t plan_mask;
 static volatile uint8_t running, start_req;
 
-enum { Q_ON, Q_OFF };
+enum { Q_ON, Q_OFF, Q_PAD };
 #define QN 16
 static struct { uint8_t type, midi; } queue[QN];
 static volatile uint32_t q_head, q_tail;
@@ -28,7 +28,8 @@ static void post(uint8_t type, unsigned midi)
 
 /* ------------------------------------------------ interrupt -> control */
 static volatile uint32_t cur_bar, wraps, swaps;
-static volatile uint8_t cur_step, cur_pos, mask;
+static volatile uint8_t cur_step, cur_pos;
+static volatile uint16_t mask;
 static volatile float step_acc;
 static volatile float vis_level[L_COUNT];
 static volatile uint8_t vis_pitch[L_COUNT];
@@ -55,6 +56,30 @@ static float hat_env, hat_lp, clap_env, clap_t, clap_lp1, clap_lp2;
 static fm_t perc;
 static float drone_ph[3], drone_amp, drone_lp1, drone_lp2, lfo_ph, duck;
 static uint32_t rng = 0x2545f491u;
+
+/* ---- pad drums: one small voice each (tone with a pitch drop, filtered noise) */
+enum { W_SINE, W_BELL, W_METAL };
+typedef struct { float f0, f1, pitch_s, amp_s, tone, noise, lp, hp, gain, pan; uint8_t wave; } drum_def;
+static const drum_def DRUM[D_COUNT] FM1_AUDIO_DATA = {
+    /*  f0     f1    pitch  amp   tone noise  lp    hp    gain  pan  wave */
+    { 160.0f, 52.0f, 0.035f, 0.30f, 1.0f, 0.06f, 0.30f, 0.00f, 0.60f, 0.0f, W_SINE  },  /* KICK    FX   */
+    { 240.0f, 185.0f,0.020f, 0.13f, 0.5f, 0.85f, 0.55f, 0.08f, 0.36f, 0.05f, W_SINE },  /* SNARE   SCL  */
+    {   0.0f, 0.0f,  0.010f, 0.11f, 0.0f, 1.00f, 0.32f, 0.06f, 0.34f, -0.1f, W_SINE },  /* CLAP    ENV  */
+    {1750.0f,1650.0f,0.010f, 0.025f,1.0f, 0.25f, 0.80f, 0.10f, 0.26f, 0.25f, W_SINE },  /* RIM     LFO  */
+    {   0.0f, 0.0f,  0.010f, 0.030f,0.0f, 1.00f, 0.95f, 0.55f, 0.16f, 0.35f, W_SINE },  /* CH      EDIT */
+    {   0.0f, 0.0f,  0.010f, 0.22f, 0.0f, 1.00f, 0.95f, 0.50f, 0.13f, 0.35f, W_SINE },  /* OH      GLO  */
+    { 150.0f, 92.0f, 0.060f, 0.26f, 1.0f, 0.08f, 0.35f, 0.00f, 0.40f, -0.35f,W_SINE },  /* LTOM    SAVE */
+    { 230.0f, 150.0f,0.050f, 0.20f, 1.0f, 0.08f, 0.40f, 0.00f, 0.34f, -0.15f,W_SINE },  /* HTOM    ARP  */
+    { 520.0f, 520.0f,0.100f, 0.80f, 0.5f, 0.30f, 0.90f, 0.40f, 0.11f, 0.45f, W_METAL},  /* RIDE    SEQ  */
+    {   0.0f, 0.0f,  0.010f, 0.050f,0.0f, 1.00f, 0.70f, 0.45f, 0.11f, -0.4f, W_SINE },  /* SHAKER  PLAY */
+    { 545.0f, 545.0f,0.100f, 0.14f, 1.0f, 0.00f, 0.45f, 0.05f, 0.15f, -0.3f, W_BELL },  /* COWBELL REC  */
+};
+typedef struct { float ph, hz, env, k_amp, k_pitch, lp, hp; } drum_v;
+static drum_v dv[D_COUNT];
+static ms_groove grv[2];
+static volatile uint8_t g_live, g_pending, g_pend_pos, gpos;
+static volatile uint32_t g_wraps;
+static volatile uint8_t pad_hits[D_COUNT];
 static float ksamp;   /* fractional sample counter inside a step */
 static uint8_t step_in_bar, pos;
 static uint32_t bar_count;
@@ -84,6 +109,45 @@ static FM1_AUDIO_CODE float fm_run(fm_t *v, float k_decay, float k_release)
     return v->low * v->env;
 }
 
+static FM1_AUDIO_CODE void drum_hit(unsigned d)
+{
+    drum_v *v = &dv[d];
+    v->env = 1.0f; v->hz = DRUM[d].f0; v->ph = 0.0f;
+    if (d == D_CH) dv[D_OH].env *= 0.05f;        /* closed hat chokes the open one */
+    ++pad_hits[d];
+}
+static FM1_AUDIO_CODE void drums_run(float *l, float *r, float *level)
+{
+    float lv = 0.0f;
+    for (unsigned d = 0; d < D_COUNT; ++d) {
+        drum_v *v = &dv[d];
+        if (v->env < 0.0004f) continue;
+        const drum_def *k = &DRUM[d];
+        float x = 0.0f;
+        if (k->tone > 0.0f) {
+            v->hz = k->f1 + (v->hz - k->f1) * v->k_pitch;
+            v->ph += v->hz * (1.0f / FS); if (v->ph >= 1.0f) v->ph -= 1.0f;
+            float t;
+            if (k->wave == W_BELL) {                 /* two detuned squares, cowbell-ish */
+                float p2 = v->ph * 1.48f; p2 -= (float)(int)p2;
+                t = (v->ph < 0.5f ? 0.5f : -0.5f) + (p2 < 0.5f ? 0.5f : -0.5f);
+            } else if (k->wave == W_METAL) t = mm_sin01(v->ph + 0.8f * mm_sin01(v->ph * 2.71f) + 0.5f * mm_sin01(v->ph * 4.13f));
+            else t = mm_sin01(v->ph);
+            x += t * k->tone;
+        }
+        if (k->noise > 0.0f) x += noise() * k->noise;
+        v->lp += k->lp * (x - v->lp);
+        float y = v->lp;
+        if (k->hp > 0.0f) { v->hp += k->hp * (y - v->hp); y -= v->hp; }
+        y *= v->env * k->gain;
+        if (d == D_KICK) y = softclip(1.6f * y);
+        v->env *= v->k_amp;
+        if (v->env > lv) lv = v->env;
+        *l += y * (1.0f - k->pan); *r += y * (1.0f + k->pan);
+    }
+    *level = lv;
+}
+
 /* ------------------------------------------------------------ sequencer */
 static FM1_AUDIO_CODE int bit(uint16_t bits, unsigned n) { return (bits >> (n & 15u)) & 1u; }
 
@@ -106,7 +170,7 @@ static FM1_AUDIO_CODE void do_step(void)
     }
     const ms_phrase *p = &phr[live_buf];
     cur_bar = bar_count; cur_step = step_in_bar; cur_pos = pos;
-    uint8_t m = mask;
+    uint16_t m = mask;
     unsigned s = step_in_bar;
     if (p->len) {
         uint8_t n = p->note[pos & (p->len - 1u)];
@@ -126,6 +190,21 @@ static FM1_AUDIO_CODE void do_step(void)
         unsigned r = 60u + p->root + ((s & 4u) ? 7u : 0u);
         fm_trigger(&perc, r, 0.2f); hit_note[L_PERC] = (uint8_t)r; ++hits[L_PERC];
     }
+    /* the player's drum groove, its own loop */
+    if (g_pending == MS_ALIGN && grv[g_live ^ 1u].len) {
+        g_live ^= 1u; gpos = (uint8_t)((g_pend_pos + step_in_bar) & (grv[g_live].len - 1u)); g_pending = 0;
+    }
+    if (gpos == 0 && g_pending == MS_AT_WRAP) { g_live ^= 1u; g_pending = 0; }
+    {
+        const ms_groove *g = &grv[g_live];
+        if (g->len) {
+            if (m & (1u << L_PADS)) {
+                uint16_t h = g->hits[gpos & (g->len - 1u)];
+                for (unsigned d = 0; d < D_COUNT; ++d) if ((h >> d) & 1u) drum_hit(d);
+            }
+            gpos = (uint8_t)((gpos + 1u) & (g->len - 1u)); if (gpos == 0) ++g_wraps;
+        }
+    }
     if (p->len) { pos = (uint8_t)((pos + 1u) & (p->len - 1u)); if (pos == 0) ++wraps; }
     if (++step_in_bar >= 16) { step_in_bar = 0; ++bar_count; }
 }
@@ -134,19 +213,20 @@ FM1_AUDIO_CODE void johnny_audio_render(int32_t *out, unsigned frames)
 {
     while (q_tail != q_head) {
         uint32_t t = q_tail;
-        if (queue[t & (QN - 1)].type == Q_ON) fm_trigger(&live, queue[t & (QN - 1)].midi, 1000.0f);
+        if (queue[t & (QN - 1)].type == Q_PAD) { if (queue[t & (QN - 1)].midi < D_COUNT) drum_hit(queue[t & (QN - 1)].midi); }
+        else if (queue[t & (QN - 1)].type == Q_ON) fm_trigger(&live, queue[t & (QN - 1)].midi, 1000.0f);
         else if (live.midi == queue[t & (QN - 1)].midi) live.gate = 0;
         q_tail = t + 1;
     }
     if (start_req) {
         start_req = 0; running = 1;
-        step_in_bar = 0; bar_count = 0; pos = 0; ksamp = SPT; mask = 0;
+        step_in_bar = 0; bar_count = 0; pos = 0; gpos = 0; ksamp = SPT; mask = 0;
         cur_bar = 0; cur_step = 0; cur_pos = 0;
     }
     uint8_t drone_on = (uint8_t)(running && (mask & (1u << L_DRONE)));
     const ms_phrase *p = &phr[live_buf];
     float droot = note_hz[48u + p->root];
-    float lvl[L_COUNT] = {0};
+    float lvl[L_COUNT] = {0}, pad_level = 0.0f, pad_peak = 0.0f;
     for (unsigned f = 0; f < frames; ++f) {
         if (running) {
             ksamp += 1.0f;
@@ -180,6 +260,7 @@ FM1_AUDIO_CODE void johnny_audio_render(int32_t *out, unsigned frames)
             l += v; r += v * 0.8f;
         }
         v = fm_run(&perc, k_perc, k_perc) * 0.15f; l += v; r += v * 0.55f;
+        drums_run(&l, &r, &pad_level); if (pad_level > pad_peak) pad_peak = pad_level;
 
         float target = drone_on ? 1.0f : 0.0f;
         drone_amp = target + (drone_amp - target) * (drone_on ? k_drone_up : k_drone_down);
@@ -216,7 +297,7 @@ FM1_AUDIO_CODE void johnny_audio_render(int32_t *out, unsigned frames)
     }
     lvl[L_LEAD] = lead.env > live.env ? lead.env : live.env;
     lvl[L_KICK] = kick_env; lvl[L_BASS] = bass.env; lvl[L_HAT] = hat_env; lvl[L_DRONE] = drone_amp;
-    lvl[L_CLAP] = clap_env; lvl[L_ECHO] = echo.env; lvl[L_PERC] = perc.env;
+    lvl[L_CLAP] = clap_env; lvl[L_ECHO] = echo.env; lvl[L_PERC] = perc.env; lvl[L_PADS] = pad_peak;
     for (unsigned i = 0; i < L_COUNT; ++i) vis_level[i] = lvl[i];
     vis_pitch[L_LEAD] = live.env > lead.env ? live.midi : lead.midi;
     vis_pitch[L_ECHO] = echo.midi; vis_pitch[L_PERC] = perc.midi; vis_pitch[L_BASS] = bass.midi;
@@ -240,6 +321,10 @@ void ms_init(void)
     perc.ratio = 1.47f; perc.depth = 1.1f; perc.tone = 0.6f; perc.k_idx = k_perc_idx;
     SPT = FS * 60.0f / (float)MS_BPM / 4.0f; lead_gate = 0.55f; fx_lp_g = 1.0f; fx_hp_g = 0.0f; fx_drive = 0.0f;
     running = 0; mask = 0; hold = 0; pending = 0; plan_bar = 0xffffffffu;
+    for (unsigned d = 0; d < D_COUNT; ++d) {
+        dv[d].k_amp = coef(DRUM[d].amp_s); dv[d].k_pitch = coef(DRUM[d].pitch_s); dv[d].env = 0.0f;
+    }
+    grv[0].len = grv[1].len = 0; g_pending = 0; gpos = 0;
     for (unsigned b = 0; b < 2; ++b) { phr[b].len = 0; phr[b].root = 0; phr[b].bass_bits = phr[b].perc_bits = 0; phr[b].echo_keep[0] = phr[b].echo_keep[1] = 0; }
 }
 void ms_start(void) { pending = 0; hold = 0; plan_bar = 0xffffffffu; start_req = 1; }
@@ -253,8 +338,15 @@ void ms_commit(unsigned when, unsigned start_pos, int release_hold)
 }
 void ms_cancel(void) { pending = 0; }
 int ms_pending(void) { return pending; }
-void ms_plan_mask(uint32_t bar, uint8_t m) { plan_bar = 0xffffffffu; plan_mask = m; plan_bar = bar; }
-void ms_mask_now(uint8_t m) { mask = m; }
+void ms_plan_mask(uint32_t bar, uint16_t m) { plan_bar = 0xffffffffu; plan_mask = m; plan_bar = bar; }
+void ms_mask_now(uint16_t m) { mask = m; }
+ms_groove *ms_groove_back(void) { return &grv[g_live ^ 1u]; }
+void ms_groove_commit(unsigned when, unsigned start_pos) { g_pend_pos = (uint8_t)start_pos; g_pending = (uint8_t)when; }
+void ms_groove_cancel(void) { g_pending = 0; }
+int ms_groove_pending(void) { return g_pending; }
+uint32_t ms_groove_wraps(void) { return g_wraps; }
+void ms_pad_hit(unsigned drum) { post(Q_PAD, drum); }
+unsigned ms_pad_hits(unsigned drum) { return drum < D_COUNT ? pad_hits[drum] : 0u; }
 void ms_set_tempo(float bpm) { SPT = FS * 60.0f / bpm / 4.0f; }
 void ms_set_lead(float ratio, float depth, float tone, float decay_s, float idx_s, float gate_steps)
 {

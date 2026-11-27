@@ -9,7 +9,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SHOTS = {500: 'boot', 9000: 'lead', 26000: 'kick', 38500: 'sound', 77400: 'filter', 91900: 'full', 111600: 'mutate'}
 tmp = tempfile.mkdtemp()
 exe = os.path.join(tmp, 'johnny_host')
-src = [os.path.join(ROOT, 'johnny', 'host', 'johnny_host.c')] + [os.path.join(ROOT, 'app', 'johnny', 'johnny_%s.c' % n) for n in ('app', 'model', 'synth', 'screen', 'lights')]
+src = [os.path.join(ROOT, 'johnny', 'host', 'johnny_host.c')] + [os.path.join(ROOT, 'app', 'johnny', 'johnny_%s.c' % n) for n in ('app', 'model', 'synth', 'screen', 'lights', 'drums', 'groove')]
 subprocess.check_call(['gcc', '-O2', '-DFM1_HOST_TEST', '-I' + os.path.join(ROOT, 'app', 'johnny')] + src + ['-lm', '-o', exe])
 env = dict(os.environ, SHOTS=','.join(str(t) for t in sorted(SHOTS)))
 subprocess.check_call([exe, tmp, '64'], env=env)

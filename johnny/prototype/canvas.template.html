@@ -23,12 +23,15 @@ main{min-height:100vh;display:flex;flex-direction:column;align-items:center;just
 .brand{font:12px 'Silkscreen',monospace;color:var(--dim);text-align:center;margin:0 0 12px}
 .bezel{background:#12140f;border-radius:14px;padding:12px;box-shadow:inset 0 2px 8px #000}
 canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-radius:4px;background:var(--lcd)}
-.layers{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-top:14px}
+.layers{display:grid;grid-template-columns:repeat(9,1fr);gap:4px;margin-top:14px}
 .layers span{font:10px 'Silkscreen',monospace;text-align:center;color:#4c5444;padding:3px 0;border-radius:3px;transition:color .15s,background .15s}
 .layers span.on{color:var(--ink);background:var(--lcd)}
-.btnleds{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;margin-top:12px}
-.btnleds i{height:6px;border-radius:3px;background:#2b3125;transition:background .06s}
-.btnleds i.lit{background:var(--lcd);box-shadow:0 0 8px var(--lcd)}
+.panel{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-top:12px}
+.panel button{min-height:38px;padding:2px 0 0;font:8px/1.1 'Silkscreen',monospace;color:var(--dim);background:#1c2018;border:1px solid #11140e;border-radius:6px;cursor:pointer;touch-action:none;user-select:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:background .06s}
+.panel button small{font:7px 'Silkscreen',monospace;color:#5d6956}
+.panel button.lit{background:var(--lcd);color:var(--ink);box-shadow:0 0 10px var(--lcd)}
+.panel button.lit small{color:var(--ink)}
+.panel button:focus-visible{outline:2px solid var(--lcd);outline-offset:2px}
 .piano button.lit{box-shadow:0 0 14px 2px var(--lcd)}
 .knobs{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px}
 .knob{display:flex;flex-direction:column;align-items:center;gap:5px;font:9px 'Silkscreen',monospace;color:var(--dim);user-select:none}
@@ -48,7 +51,7 @@ canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-
 #start span{display:block;text-align:center}
 #start strong{display:block;font:400 clamp(30px,7vw,46px)/1.05 'Silkscreen',monospace;margin-bottom:10px}
 #start small{color:var(--dim);font-size:20px}
-@media(max-width:600px){.phone{padding:20px 14px 18px;border-radius:34px 34px 48px 48px}.layers span{font-size:8px}.piano button{width:24px}.piano button.b{width:16px;margin:0 -8px}}
+@media(max-width:600px){.phone{padding:20px 14px 18px;border-radius:34px 34px 48px 48px}.layers span{font-size:7px}.piano button{width:24px}.piano button.b{width:16px;margin:0 -8px}}
 @media(prefers-reduced-motion:reduce){.layers span{transition:none}}
 </style>
 </head>
@@ -58,18 +61,17 @@ canvas{display:block;width:100%;aspect-ratio:1;image-rendering:pixelated;border-
     <p class="brand">NEURAL JOHNNY &middot; FM-1</p>
     <div class="bezel"><canvas id="lcd" width="240" height="240" role="img" aria-label="Neural Johnny screen: one oscillator line for every sound that plays"></canvas></div>
     <div class="layers" id="layers" aria-label="Layers playing"></div>
-    <div class="btnleds" id="btnleds" aria-hidden="true"></div>
+    <div class="panel" id="panel" aria-label="FM-1 panel buttons: drum pads, OCT mute and solo, HOME"></div>
     <div class="knobs" id="knobs" aria-label="Knobs: drag up or down, scroll, or focus and use the arrow keys"></div>
-    <button class="home" id="home">HOME</button>
   </div>
   <div class="piano" id="piano" aria-label="FM-1 keys, F3 to G5"></div>
-  <p class="hint">Play <b>1&ndash;16 notes</b> and stop: the model answers and keeps developing your motif, a new layer every 8 bars. Play a new melody at any time. Keys: <b>A W S E D F T G Y H U J K O L P ; '</b> from C4, <b>Z / X</b> octave, <b>Esc</b> home. Knobs: drag, scroll, or <b>1 2</b> filter, <b>3 4</b> drive, <b>5 6</b> mutate, <b>7 8</b> notes, <b>9 0</b> preset sound, <b>[ ]</b> tempo, <b>- =</b> length.</p>
+  <p class="hint">Play <b>1&ndash;16 notes</b> and stop: the model answers and keeps developing your motif, a new layer every 8 bars. Play a new melody at any time. Keys: <b>A W S E D F T G Y H U J K O L P ; '</b> from C4, <b>Z / X</b> octave, <b>Esc</b> home. Knobs: drag, scroll, or <b>1 2</b> filter, <b>3 4</b> drive, <b>5 6</b> mutate, <b>7 8</b> notes, <b>9 0</b> preset sound, <b>[ ]</b> tempo, <b>- =</b> length. Drum pads: <b>Q R I C V B N M , . /</b> (kick to cowbell), tap a groove and stop: the model continues it too. <b>&larr;</b> OCT&minus; mutes sounds one by one, <b>&rarr;</b> OCT+ brings them back, hold <b>both</b> for one random sound alone.</p>
 </main>
 <button id="start"><span><strong>NEURAL JOHNNY</strong><small>tap or press a key &middot; sound on</small></span></button>
 <script>
 {
 const WASM_B64 = "%%WASM%%";
-const NAMES = ['LEAD','KICK','BASS','HATS','DRONE','CLAP','ECHO','PERC'];
+const NAMES = ['LEAD','KICK','BASS','HATS','DRONE','CLAP','ECHO','PERC','GROOVE'];
 const PIANO = "awsedftgyhujkolp;'";
 const HOME = 8;
 const lcd = document.getElementById('lcd'), ctx = lcd.getContext('2d');
@@ -77,9 +79,17 @@ const img = ctx.createImageData(240,240);
 const layersEl = document.getElementById('layers');
 layersEl.innerHTML = NAMES.map(n => '<span>' + n + '</span>').join('');
 const layerSpans = [...layersEl.children];
-const btnLedsEl = document.getElementById('btnleds');
-btnLedsEl.innerHTML = '<i></i>'.repeat(14);
-const btnLeds = [...btnLedsEl.children];
+/* FM-1 panel: index = button number; [label, what it does here, computer key] */
+const PANEL = [['OCT-','MUTE','ArrowLeft'],['OCT+','UNMUTE','ArrowRight'],['FX','KICK','q'],['SCL','SNARE','r'],['ENV','CLAP','i'],['LFO','RIM','c'],['EDIT','CL HAT','v'],
+               ['GLO','OP HAT','b'],['HOME','EXIT','Escape'],['SAVE','LO TOM','n'],['ARP','HI TOM','m'],['SEQ','RIDE',','],['PLAY','SHAKER','.'],['REC','COWBELL','/']];
+const panelEl = document.getElementById('panel');
+const btnLeds = PANEL.map(([label, does], i) => {
+  const b = document.createElement('button'); b.type = 'button';
+  b.innerHTML = label + '<small>' + does + '</small>';
+  b.setAttribute('aria-label', label + ': ' + does.toLowerCase());
+  panelEl.appendChild(b);
+  return b;
+});
 /* FM-1 encoder order: SELECT, ALGORITHM, K1..K4, PRESETS */
 const KNOBS = [['TEMPO',0,'[',']'],['LENGTH',1,'-','='],['FILTER',2,'1','2'],['DRIVE',3,'3','4'],['MUTATE',4,'5','6'],['NOTES',5,'7','8'],['PRESET',6,'9','0']];
 const enc = [0,0,0,0,0,0,0], angle = [0,0,0,0,0,0,0];
@@ -128,7 +138,8 @@ function down(e){
   if(e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   if(!started){ e.preventDefault(); start(); return; }
   const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
-  if(k === 'Escape'){ buttons |= 1 << HOME; bLatch |= 1 << HOME; held.set(e.code, {b: HOME}); e.preventDefault(); return; }
+  const bi = PANEL.findIndex(p => p[2] === k);
+  if(bi >= 0){ buttons |= 1 << bi; bLatch |= 1 << bi; held.set(e.code, {b: bi}); e.preventDefault(); return; }
   for(const [, idx, dn, upk] of KNOBS) if(k === dn || k === upk){ turn(idx, k === upk ? 1 : -1); e.preventDefault(); return; }
   if(k === 'z' || k === 'x'){ base = Math.max(48, Math.min(72, base + (k === 'z' ? -12 : 12))); return; }
   const i = keyIndex(k);
@@ -145,7 +156,7 @@ const press = (el, on, off) => {
   el.addEventListener('pointerdown', e => { e.preventDefault(); if(!started){ start(); return; } el.setPointerCapture(e.pointerId); on(); });
   el.addEventListener('pointerup', off); el.addEventListener('pointercancel', off);
 };
-press(document.getElementById('home'), () => { buttons |= 1 << HOME; bLatch |= 1 << HOME; }, () => buttons &= ~(1 << HOME));
+btnLeds.forEach((b, i) => press(b, () => { buttons |= 1 << i; bLatch |= 1 << i; }, () => buttons &= ~(1 << i)));
 const knobEls = [];
 function turn(idx, d){
   if(!started){ start(); return; }

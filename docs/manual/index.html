@@ -64,6 +64,8 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
     <li><a href="#knobs">Knobs</a></li>
     <li><a href="#sound">The evolving sound</a></li>
     <li><a href="#model">Steering the model</a></li>
+    <li><a href="#pads">Drum pads</a></li>
+    <li><a href="#oct">Mute and solo (OCT)</a></li>
     <li><a href="#screen">The screen</a></li>
     <li><a href="#lights">Neural lights</a></li>
     <li><a href="#inside">How the model works</a></li>
@@ -92,9 +94,11 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <tr><td><kbd>SELECT</kbd></td><td>TEMPO, 118 to 140 BPM.</td></tr>
 <tr><td><kbd>ALGORITHM</kbd></td><td>LENGTH of the melody's notes.</td></tr>
 <tr><td><kbd>MASTER</kbd></td><td>Volume.</td></tr>
+<tr><td><kbd>FX</kbd> &hellip; <kbd>REC</kbd></td><td>11 drum pads (<a href="#pads">section 10</a>).</td></tr>
+<tr><td><kbd>OCT&minus;</kbd> / <kbd>OCT+</kbd></td><td>Mute sounds one by one / bring them back; both held: one sound alone (<a href="#oct">section 11</a>).</td></tr>
 <tr><td><kbd>HOME</kbd></td><td>Stop and go back to the start screen. All knobs go back to their start values.</td></tr>
 </tbody></table></div>
-<p>The other buttons do nothing in Neural Johnny. The knobs only work while music plays, not on the start screen.</p>
+<p>The knobs, pads and OCT buttons only work while music plays, not on the start screen: start with a melody.</p>
 
 <h2 id="melody">3. Playing your melody</h2>
 <p>Play 1 to 16 notes. The first note starts a silent clock at 132 BPM; it becomes the first sixteenth of bar 1. Every note you play is snapped to the nearest sixteenth, so you do not need perfect timing. You hear your notes as you play them, and every key you press sends a light impulse along the keyboard.</p>
@@ -183,11 +187,37 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <h3>SELECT TEMPO and ALGORITHM LENGTH</h3>
 <p>Tempo changes at once and keeps everything in time. LENGTH sets how long each melody note sounds, from short STACCATO stabs to LEGATO notes that run into the next.</p>
 
-<h2 id="screen">10. The screen</h2>
-<p>The screen is an 80 &times; 80 grid of square pixels in two shades of green, like an old phone. Every sound is one oscillator line across the middle; the lines overlap. Each line has its own shape (soft wave for the melody, slow swell for the kick, saw for the bass, noise for hats and clap, square for the perc) and swings with its sound's volume. The melody's line gets more waves the higher the note. A sound that rests loses its line until it comes back.</p>
+<h2 id="pads">10. Drum pads</h2>
+<p>The 11 buttons from <kbd>FX</kbd> to <kbd>REC</kbd> play drums, as soon as the music runs:</p>
+<div class="table"><table>
+<thead><tr><th scope="col">Button</th><th scope="col">Drum</th><th scope="col">Button</th><th scope="col">Drum</th></tr></thead>
+<tbody>
+<tr><td><kbd>FX</kbd></td><td>Kick</td><td><kbd>SAVE</kbd></td><td>Low tom</td></tr>
+<tr><td><kbd>SCL</kbd></td><td>Snare</td><td><kbd>ARP</kbd></td><td>High tom</td></tr>
+<tr><td><kbd>ENV</kbd></td><td>Clap</td><td><kbd>SEQ</kbd></td><td>Ride</td></tr>
+<tr><td><kbd>LFO</kbd></td><td>Rim</td><td><kbd>PLAY</kbd></td><td>Shaker</td></tr>
+<tr><td><kbd>EDIT</kbd></td><td>Closed hat (it cuts the open hat)</td><td><kbd>REC</kbd></td><td>Cowbell</td></tr>
+<tr><td><kbd>GLO</kbd></td><td>Open hat</td><td></td><td></td></tr>
+</tbody></table></div>
+<p><b>Tapping a groove</b> works like playing a melody: hits snap to sixteenths, and the same rules decide when you are done (<a href="#melody">section 3</a>), 1 or 2 bars. Then the <b>groove model</b> plays an answer of the same length and the groove loops on its own, as the ninth sound, <b>GROOVE</b>, on top of Johnny's own drums. Every repeat it flips a hit or two of its answer, where it most wants a change, and keeps the answer about as busy as your groove. The four-on-the-floor kicks of the answer always stay.</p>
+<p>While you tap a new groove, the old one waits, so you hear only your hits; when you stop, the new groove takes over. <kbd>K3</kbd> MUTATE and <kbd>K4</kbd> NOTES steer the groove model the same way as the melody model. GROOVE takes breaths like every other sound.</p>
+<div class="box">The buttons have no velocity and a firmer press than rubber pads. Tap steadily; everything snaps to the grid.</div>
+
+<h2 id="oct">11. Mute and solo (OCT)</h2>
+<div class="table"><table>
+<thead><tr><th scope="col">Press</th><th scope="col">Does</th><th scope="col">Label</th></tr></thead>
+<tbody>
+<tr><td><kbd>OCT&minus;</kbd></td><td>Mutes the sound you hear that came in last. Press again for the one before, down to the last sound, which always stays. The <kbd>OCT&minus;</kbd> light stays on while anything is muted.</td><td><code>MUTE PERC</code></td></tr>
+<tr><td><kbd>OCT+</kbd></td><td>Brings back the sound muted last, then the one before.</td><td><code>UNMUTE PERC</code></td></tr>
+<tr><td><kbd>OCT&minus;</kbd> + <kbd>OCT+</kbd> held</td><td>Only one random sound from those playing stays, for as long as you hold both; breaths are skipped for it. Let go and everything is back exactly as before. The <kbd>OCT+</kbd> light is on while you hold.</td><td><code>ONLY BASS</code>, then <code>ALL BACK</code></td></tr>
+</tbody></table></div>
+<p>Press both at about the same moment (within 70 ms) for the hold; a single press acts a moment after you press it. The arrangement keeps going underneath: new sounds still come in and take breaths while others are muted.</p>
+
+<h2 id="screen">12. The screen</h2>
+<p>The screen is an 80 &times; 80 grid of square pixels in two shades of green, like an old phone. Every sound is one oscillator line across the middle; the lines overlap. Each line has its own shape (soft wave for the melody, slow swell for the kick, saw for the bass, noise for hats and clap, square for the perc, pulses with grit for your GROOVE) and swings with its sound's volume. The melody's line gets more waves the higher the note. A sound that rests loses its line until it comes back.</p>
 <figure><img src="../assets/full.png" width="480" height="480" alt="Seven oscillator lines"><figcaption>All seven sounds in.</figcaption></figure>
 
-<h2 id="lights">11. Neural lights</h2>
+<h2 id="lights">13. Neural lights</h2>
 <p>All 41 lights take part: the 27 keys and the 14 buttons. They are on or off, so Johnny draws with movement. Impulses run along the keys and, now and then, branch over to the button row, like signals in a net of neurons.</p>
 <div class="table"><table>
 <thead><tr><th scope="col">Sound</th><th scope="col">Light</th></tr></thead>
@@ -200,15 +230,18 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <tr><td>CLAP</td><td>An impulse along the buttons.</td></tr>
 <tr><td>ECHO</td><td>A slower impulse on the buttons.</td></tr>
 <tr><td>YOUR NOTES</td><td>Impulses from the key you play.</td></tr>
+<tr><td>DRUM PADS</td><td>The pad's own light flashes on each of its hits, yours and the model's. Kick, snare and clap also send a small impulse.</td></tr>
+<tr><td><kbd>OCT&minus;</kbd> / <kbd>OCT+</kbd></td><td>Steady while sounds are muted / while a solo is held.</td></tr>
 <tr><td>START SCREEN</td><td>Slow, quiet sparks.</td></tr>
 </tbody></table></div>
 
-<h2 id="inside">12. How the model works</h2>
+<h2 id="inside">14. How the models work</h2>
 <p>The model is a small neural network (a multilayer perceptron) with about 8,400 weights stored as 8-bit integers; it runs on the FM-1 itself: about 8,400 multiply-adds for each step it writes. For each sixteenth it looks at the last four steps, the steps half a bar, one bar and half the loop back, the last note played, and where it is in the bar, and gives a probability for every possible next step: a rest, or a note from an octave below to two octaves above the root.</p>
 <p>Johnny then keeps only the notes in the key of your melody and within a few semitones of its range, adjusts the odds with <kbd>K3</kbd> and <kbd>K4</kbd>, and draws one. The root and key come from your melody: the note you play most, first and lowest, in the minor-type scale that holds all of your notes.</p>
-<p>It was trained on a rule-built collection of hypnotic techno motifs: minor, phrygian and dorian modes, pedal tones, arpeggios, short cells repeated with small changes, answers that land on the root or the fifth. The training script in the source (<code>johnny/tools/train_model.py</code>) can mix in your own loops from <code>johnny/data/</code>.</p>
+<p>The <b>groove model</b> is a second, smaller network (about 4,400 weights). For each sixteenth it looks at each drum's hits one, two, four, eight and sixteen steps back and half a loop back, which drums you used, and where it is in the bar, and gives every drum its own chance to hit. Drums you did not play join only when it is very sure. It was trained on rule-built techno grooves: four-on-the-floor and broken kicks, backbeats, off-beat and sixteenth hats, syncopated rims and cowbells, tom fills at the end of a phrase.</p>
+<p>The melody model was trained on a rule-built collection of hypnotic techno motifs: minor, phrygian and dorian modes, pedal tones, arpeggios, short cells repeated with small changes, answers that land on the root or the fifth. The training script in the source (<code>johnny/tools/train_model.py</code>) can mix in your own loops from <code>johnny/data/</code>.</p>
 
-<h2 id="help">13. Troubleshooting</h2>
+<h2 id="help">15. Troubleshooting</h2>
 <h3>Nothing plays</h3>
 <p>Turn <kbd>MASTER</kbd> up and play a few notes. Johnny plays nothing before your first melody.</p>
 <h3>The answer starts too early or too late</h3>
@@ -219,6 +252,10 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <p>Turn <kbd>K4</kbd> left for fewer notes, right for more. Give it a few repeats.</p>
 <h3>Everything sounds dull or thin</h3>
 <p><kbd>K1</kbd> is not in the middle. Turn it back to FILTER OFF.</p>
+<h3>The pads do nothing</h3>
+<p>Pads work once the music runs. Play a melody first.</p>
+<h3>Some sounds are gone</h3>
+<p>You muted them with <kbd>OCT&minus;</kbd> (its light is on). Press <kbd>OCT+</kbd> until <code>ALL SOUNDS ON</code>.</p>
 <h3>Back to the start</h3>
 <p><kbd>HOME</kbd> stops the music, clears the melody and resets every knob.</p>
 </main>

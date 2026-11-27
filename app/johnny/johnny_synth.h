@@ -1,12 +1,16 @@
 /* NEURAL JOHNNY - hypnotic techno synth and step sequencer.
- * Eight layers sound from the audio interrupt; the control task (johnny_app.c)
- * only posts phrases, layer masks and live notes.
+ * Nine layers sound from the audio interrupt (the eighth-plus-one is the
+ * player's own drum groove on the panel buttons); the control task
+ * (johnny_app.c, johnny_groove.c) only posts phrases, grooves, layer masks and
+ * live notes and hits.
  *   ms_*                 -> control task
  *   johnny_audio_render   -> audio interrupt (adds to the FM-1 output block) */
 #pragma once
 #include "johnny_port.h"
 
-enum { L_LEAD, L_KICK, L_BASS, L_HAT, L_DRONE, L_CLAP, L_ECHO, L_PERC, L_COUNT };
+enum { L_LEAD, L_KICK, L_BASS, L_HAT, L_DRONE, L_CLAP, L_ECHO, L_PERC, L_PADS, L_COUNT };
+/* The 11 pad drums, in the order of the panel buttons FX .. REC. */
+enum { D_KICK, D_SNARE, D_CLAP, D_RIM, D_CH, D_OH, D_LTOM, D_HTOM, D_RIDE, D_SHAKER, D_COWBELL, D_COUNT };
 enum { MS_BPM = 132, MS_MAX_STEPS = 64 };
 
 typedef struct {
@@ -17,6 +21,11 @@ typedef struct {
     uint16_t perc_bits;           /* perc hits in one bar */
     uint32_t echo_keep[2];        /* which lead steps the echo repeats (bit per step) */
 } ms_phrase;
+
+typedef struct {
+    uint16_t hits[MS_MAX_STEPS];  /* per 16th: bit d = pad drum d hits */
+    uint8_t len;                  /* 32 or 64 */
+} ms_groove;
 
 void ms_init(void);
 void ms_start(void);                         /* transport from bar 0 step 0, now */
@@ -36,20 +45,30 @@ void ms_commit(unsigned when, unsigned start_pos, int release_hold);
 void ms_cancel(void);                        /* forget a commit not yet taken */
 int ms_pending(void);
 
-void ms_plan_mask(uint32_t bar, uint8_t mask);   /* layers on in that bar */
-void ms_mask_now(uint8_t mask);
+void ms_plan_mask(uint32_t bar, uint16_t mask);  /* layers on in that bar */
+void ms_mask_now(uint16_t mask);              /* layers on from the next 16th */
+
+/* The drum groove: same double buffer and commit rules as the phrase
+ * (MS_ALIGN or MS_AT_WRAP), its own loop. */
+ms_groove *ms_groove_back(void);
+void ms_groove_commit(unsigned when, unsigned start_pos);
+void ms_groove_cancel(void);
+int ms_groove_pending(void);
+uint32_t ms_groove_wraps(void);
+void ms_pad_hit(unsigned drum);              /* the player hits a pad: sound now */
+unsigned ms_pad_hits(unsigned drum);         /* hit counter of a pad drum (wraps at 256) */
 /* Knobs: tempo (BPM), the lead's FM sound, master filter (-1 low-pass ..
  * 0 off .. +1 high-pass) and drive (0..1). */
 void ms_set_tempo(float bpm);
 void ms_set_lead(float ratio, float depth, float tone, float decay_s, float idx_s, float gate_steps);
-void ms_set_fx(float filter, float drive);              /* layers on from the next 16th */
+void ms_set_fx(float filter, float drive);
 void ms_lead_hold(int on);                   /* silence the model's lead now */
 
 void ms_live_on(unsigned midi);              /* the player's own notes */
 void ms_live_off(unsigned midi);
 
 /* Transport, read by the control task. */
-typedef struct { uint32_t bar; unsigned step; float phase; unsigned pos; uint32_t wraps; uint32_t swaps; uint8_t mask; } ms_clock;
+typedef struct { uint32_t bar; unsigned step; float phase; unsigned pos; uint32_t wraps; uint32_t swaps; uint16_t mask; } ms_clock;
 void ms_get_clock(ms_clock *c);
 /* Envelope level (0..1) and current note of every layer, for the screen. */
 float ms_level(unsigned layer);

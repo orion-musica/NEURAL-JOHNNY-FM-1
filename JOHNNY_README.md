@@ -43,6 +43,18 @@ LIGHTS
   bar line sends a wave through the whole net. Your own notes fire impulses too.
   On the start screen the net rests and sparks slowly.
 
+DRUM PADS
+  The buttons FX SCL ENV LFO EDIT GLO SAVE ARP SEQ PLAY REC play
+  kick, snare, clap, rim, closed hat, open hat, low tom, high tom, ride, shaker, cowbell.
+  Tap a 1- or 2-bar groove and stop (same rules as the melody): the groove model answers
+  and keeps developing it as an extra layer, GROOVE, on top of Johnny's own drums.
+  While you tap a new groove the old one waits. K3 and K4 steer it too.
+
+OCT- / OCT+
+  OCT-  mutes the sound you hear that came in last, then the one before (one always stays)
+  OCT+  brings them back, last muted first
+  both held: only one random playing sound stays; let go and all is back as before
+
 CONTROLS
   Keys       play
   PRESETS    the melody's sound evolves: 8 FM timbres (SOFT, HOLLOW, BELL, GLASS,
@@ -58,6 +70,7 @@ CONTROLS
   ALGORITHM  LENGTH: note length of the melody, staccato to legato
   MASTER     volume
   HOME       back to the start screen (stops the music, knobs back to default)
+  Pads, knobs and OCT work once the music runs.
   While a knob turns, its name and value show at the top of the screen for a second.
 
 STORAGE

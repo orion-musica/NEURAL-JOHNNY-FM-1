@@ -12,6 +12,7 @@
  *   clap          -> an impulse along the whole button row
  *   bar line      -> (with the kick in) a wave across both rows
  *   your own keys -> impulses from the key you play
+ *   drum pads     -> the pad's own light flashes on every hit, yours or the model's
  * Impulses branch to the other row with a small chance at every step, so the
  * light looks like a net firing, not a scanner. */
 #include "johnny_lights.h"
@@ -24,7 +25,7 @@ typedef struct { float x, speed; int8_t dir; uint8_t row, tail, on, branches; fl
 static imp_t imp[MAX_IMP];
 static struct { uint8_t led; uint32_t until; } flash[MAX_FLASH];
 static unsigned next_imp, next_flash;
-static uint8_t seen_hits[L_COUNT];
+static uint8_t seen_hits[L_COUNT], seen_pads[D_COUNT];
 static uint64_t shown;
 static uint32_t last_now, last_bar = 0xffffffffu, last_spark;
 static uint32_t rng = 0x1234567u;
@@ -65,6 +66,7 @@ void jl_init(void)
     for (unsigned i = 0; i < MAX_IMP; ++i) imp[i].on = 0;
     for (unsigned i = 0; i < MAX_FLASH; ++i) flash[i].until = 0;
     for (unsigned l = 0; l < L_COUNT; ++l) seen_hits[l] = (uint8_t)ms_hits(l, 0);
+    for (unsigned d = 0; d < D_COUNT; ++d) seen_pads[d] = (uint8_t)ms_pad_hits(d);
     for (unsigned i = 0; i < LEDS; ++i) johnny_hal_led(i, 0);
     shown = 0; last_bar = 0xffffffffu;
 }
@@ -77,7 +79,7 @@ static int new_hits(unsigned layer, unsigned *note)
     return n;
 }
 
-void jl_tick(uint32_t now, int playing, uint32_t bar, unsigned step, uint32_t key_down)
+void jl_tick(uint32_t now, int playing, uint32_t bar, unsigned step, uint32_t key_down, uint64_t base)
 {
     float dt = (float)(now - last_now) * 0.001f;
     if (dt > 0.1f) dt = 0.1f;
@@ -114,13 +116,24 @@ void jl_tick(uint32_t now, int playing, uint32_t bar, unsigned step, uint32_t ke
         if (new_hits(L_HAT, 0)) spark((int)(rnd() % LEDS), now, 35);
         if (new_hits(L_PERC, 0)) { spark((int)(rnd() % LEDS), now, 45); spark((int)(rnd() % LEDS), now, 45); }
         if (new_hits(L_CLAP, 0)) fire(1, rndf() < 0.5f ? 0.0f : 26.0f, 0, 140.0f, 4, 27.0f, 0);
+        for (unsigned d = 0; d < D_COUNT; ++d) {             /* pads light on their own hits */
+            uint8_t h = (uint8_t)ms_pad_hits(d);
+            if (h != seen_pads[d]) {
+                seen_pads[d] = h;
+                spark(JOHNNY_PAD_BUTTON[d], now, 90);
+                if (d == D_KICK || d == D_SNARE || d == D_CLAP) {   /* the strong hits send a small impulse */
+                    float x = (float)(JOHNNY_PAD_BUTTON[d] * 2u);
+                    fire(0, x, rndf() < 0.5f ? 1 : -1, 80.0f, 1, 6.0f, 0);
+                }
+            }
+        }
     } else if (now - last_spark > 260u) {                    /* start screen: a resting brain */
         last_spark = now;
         if (rndf() < 0.6f) spark((int)(rnd() % LEDS), now, 90);
         if (rndf() < 0.12f) { float x = (float)(rnd() % 27u); fire(0, x, rndf() < 0.5f ? 1 : -1, 25.0f, 2, 6.0f, 1); }
     }
 
-    uint64_t want = 0;
+    uint64_t want = base;
     for (unsigned i = 0; i < MAX_IMP; ++i) {
         imp_t *p = &imp[i];
         if (!p->on) continue;

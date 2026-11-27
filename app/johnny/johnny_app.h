@@ -9,6 +9,12 @@
 enum { MM_KEY_LOWEST_MIDI = 53, MM_KEY_COUNT = 27 };      /* F3 .. G5 */
 enum { MM_B_OCT_DOWN, MM_B_OCT_UP, MM_B_FX, MM_B_SCL, MM_B_ENV, MM_B_LFO, MM_B_EDIT, MM_B_GLO,
        MM_B_HOME, MM_B_SAVE, MM_B_ARP, MM_B_SEQ, MM_B_PLAY, MM_B_REC, MM_B_COUNT };
+/* The 11 drum pads: panel buttons FX, SCL, ENV, LFO, EDIT, GLO, SAVE, ARP,
+ * SEQ, PLAY, REC play KICK, SNARE, CLAP, RIM, CLOSED HAT, OPEN HAT, LOW TOM,
+ * HIGH TOM, RIDE, SHAKER, COWBELL. OCT- / OCT+ mute and solo, HOME exits. */
+static const uint8_t JOHNNY_PAD_BUTTON[11] = { MM_B_FX, MM_B_SCL, MM_B_ENV, MM_B_LFO, MM_B_EDIT, MM_B_GLO,
+                                               MM_B_SAVE, MM_B_ARP, MM_B_SEQ, MM_B_PLAY, MM_B_REC };
+#define JOHNNY_PAD_MASK 0x3efcu   /* buttons 2..7 and 9..13 */
 enum { MM_LCD_W = 80, MM_LCD_H = 80, MM_CELL = 3 };       /* 80 x 80 phone pixels, 3 x 3 each */
 enum { MM_VIEW_START, MM_VIEW_WAVES };
 

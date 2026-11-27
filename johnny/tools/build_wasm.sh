@@ -7,7 +7,7 @@ M=app/johnny
 clang --target=wasm32 -O2 -ffreestanding -nostdlib -fno-builtin-memset -DFM1_HOST_TEST \
   -Ijohnny/prototype/wasm -I$M -Wall -Wno-unused-function \
   -Wl,--no-entry -Wl,--allow-undefined -Wl,--export-memory -Wl,--strip-all \
-  johnny/prototype/wasm/johnny_wasm.c $M/johnny_app.c $M/johnny_model.c $M/johnny_synth.c $M/johnny_screen.c $M/johnny_lights.c \
+  johnny/prototype/wasm/johnny_wasm.c $M/johnny_app.c $M/johnny_model.c $M/johnny_synth.c $M/johnny_screen.c $M/johnny_lights.c $M/johnny_drums.c $M/johnny_groove.c \
   -o johnny/prototype/johnny.wasm
 ls -l johnny/prototype/johnny.wasm
 python3 - <<'PY'

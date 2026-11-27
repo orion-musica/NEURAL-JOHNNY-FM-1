@@ -26,6 +26,7 @@
 #include "johnny_synth.h"
 #include "johnny_font.h"
 #include "johnny_lights.h"
+#include "johnny_groove.h"
 #include <string.h>
 
 /* ------------------------------------------------------------- helpers */
@@ -92,7 +93,10 @@ static struct {
     uint32_t echo_keep[2];
     uint8_t have_phrase;
     /* arrangement */
-    uint8_t active, order_i, free_mode, newest, breath[8];
+    uint16_t active, breath[8], arr[2], user_mute;
+    uint8_t order_i, free_mode, newest, solo, solo_hold, oct_first, oct_lock;
+    uint8_t entry[L_COUNT], n_entry, mute_stack[L_COUNT], n_muted;
+    uint32_t oct_t;
     uint32_t arr_bar0, planned_for, seen_wraps, reps, seen_swaps, block_bar;
     /* screen */
     uint32_t last_frame, serial;
@@ -195,6 +199,8 @@ static void post_phrase(unsigned when, unsigned start_pos, int release_hold)
 }
 
 static void plan_bar(uint32_t bar);
+static void activate(unsigned l);
+static uint16_t final_mask(uint16_t arr);
 
 /* Change the note at one step of the answer to the model's next choice.
  * Steps with a note, or right next to one, are picked more often. */
@@ -236,9 +242,9 @@ static void finish_seed(unsigned seed_bars, uint32_t bar_now, int join_mid_bar)
     post_phrase(MS_ALIGN, S.half, 1);
     S.reps = 0;
     if (!S.have_phrase) {                        /* first melody: the arrangement starts */
-        S.have_phrase = 1; S.active = 1u << L_LEAD; S.order_i = 0; S.free_mode = 0;
+        S.have_phrase = 1; activate(L_LEAD); S.order_i = 0; S.free_mode = 0;
         S.arr_bar0 = bar_now + (join_mid_bar ? 0u : 1u); memset(S.breath, 0, sizeof S.breath);
-        if (join_mid_bar) ms_mask_now(1u << L_LEAD);
+        if (join_mid_bar) { S.arr[bar_now & 1u] = S.active; ms_mask_now(final_mask(S.active)); }
     } else {
         S.free_mode = 1;
     }
@@ -281,19 +287,42 @@ static void develop(void)
 /* ------------------------------------------------------------- arrangement */
 static unsigned bit_count(unsigned m) { unsigned n = 0; while (m) { n += m & 1u; m >>= 1; } return n; }
 
+static void activate(unsigned l)
+{
+    if ((S.active >> l) & 1u) return;
+    S.active |= (uint16_t)(1u << l);
+    if (S.n_entry < L_COUNT) S.entry[S.n_entry++] = (uint8_t)l;
+}
+/* What really plays: the arrangement, minus OCT- mutes, or the one layer
+ * held solo with OCT- + OCT+; the old groove waits while a new one is tapped. */
+static uint16_t final_mask(uint16_t arr)
+{
+    uint16_t m = arr;
+    if (S.solo < L_COUNT) m = (uint16_t)(1u << S.solo);
+    else m &= (uint16_t)~S.user_mute;
+    if (jg_recording()) m &= (uint16_t)~(1u << L_PADS);
+    return m;
+}
+static void apply_now(const ms_clock *c)
+{
+    uint16_t arr = S.arr[c->bar & 1u];
+    if (!S.have_phrase) arr = S.active;
+    ms_mask_now(final_mask(arr));
+}
+
 static void new_block(unsigned block)
 {
     if (block > 0) {
         if (!S.free_mode) {
-            if (S.order_i < L_COUNT - 1) { S.newest = ORDER[S.order_i++]; S.active |= 1u << S.newest; }
+            if (S.order_i < sizeof ORDER) { S.newest = ORDER[S.order_i++]; activate(S.newest); }
             else S.newest = 0xff;
         } else {
-            unsigned missing = ((1u << L_COUNT) - 1u) & ~S.active;
+            unsigned missing = ((1u << L_COUNT) - 1u) & ~S.active & ~(1u << L_PADS);   /* the groove is yours */
             S.newest = 0xff;
             if (missing && rndf() < 0.55f) {
                 unsigned k = rndn(bit_count(missing));
                 for (unsigned l = 0; l < L_COUNT; ++l)
-                    if ((missing >> l) & 1u) { if (!k--) { S.active |= 1u << l; S.newest = (uint8_t)l; break; } }
+                    if ((missing >> l) & 1u) { if (!k--) { activate(l); S.newest = (uint8_t)l; break; } }
             }
         }
     }
@@ -302,7 +331,7 @@ static void new_block(unsigned block)
     if (S.newest < L_COUNT) others &= ~(1u << S.newest);   /* a layer that just came in stays */
     unsigned n = bit_count(S.active) - 1u;
     if (bit_count(others) >= 1 && n >= 2 && rndf() < 0.6f) {
-        static const uint8_t weight[L_COUNT] = { 0, 5, 3, 3, 2, 3, 2, 2 };
+        static const uint8_t weight[L_COUNT] = { 0, 5, 3, 3, 2, 3, 2, 2, 2 };
         unsigned total = 0;
         for (unsigned l = 0; l < L_COUNT; ++l) if ((others >> l) & 1u) total += weight[l];
         unsigned pick = rndn(total), layer = L_KICK;
@@ -310,25 +339,26 @@ static void new_block(unsigned block)
             if ((others >> l) & 1u) { if (pick < weight[l]) { layer = l; break; } pick -= weight[l]; }
         static const uint8_t lens[5] = { 1, 1, 2, 2, 4 };
         unsigned len = lens[rndn(5)];
-        for (unsigned b = 8 - len; b < 8; ++b) S.breath[b] |= (uint8_t)(1u << layer);
+        for (unsigned b = 8 - len; b < 8; ++b) S.breath[b] |= (uint16_t)(1u << layer);
     }
     if (n >= 5 && rndf() < 0.22f) {                         /* breakdown: the floor drops for 4 bars */
         unsigned floor = ((1u << L_KICK) | (1u << L_BASS) | (1u << L_HAT)) & others;
-        for (unsigned b = 4; b < 8; ++b) S.breath[b] |= (uint8_t)floor;
+        for (unsigned b = 4; b < 8; ++b) S.breath[b] |= (uint16_t)floor;
     }
     if (n >= 3 && rndf() < 0.12f) S.breath[7] |= 1u << L_LEAD;   /* the melody holds its breath */
 }
 
 static void plan_bar(uint32_t bar)
 {
-    uint8_t m = 0;
+    uint16_t m = 0;
     if (S.have_phrase && bar >= S.arr_bar0) {
         uint32_t rel = bar - S.arr_bar0;
         if (rel % 8u == 0u && S.block_bar != bar) { S.block_bar = bar; new_block(rel / 8u); }
-        m = (uint8_t)(S.active & ~S.breath[rel % 8u]);
+        m = (uint16_t)(S.active & ~S.breath[rel % 8u]);
         if (!m) m = 1u << L_LEAD;
-    } else if (S.have_phrase) m = (uint8_t)S.active;
-    ms_plan_mask(bar, m);
+    } else m = S.active;
+    S.arr[bar & 1u] = m;
+    ms_plan_mask(bar, final_mask(m));
     S.planned_for = bar;
 }
 
@@ -444,14 +474,17 @@ static float wave(unsigned l, float x, float t, unsigned pitch, uint32_t frame)
     case L_CLAP:  { uint32_t h = (uint32_t)(x * 40.0f) * 2246822519u ^ frame * 3266489917u; h ^= h >> 15;
                     return ((float)(h & 255u) / 127.5f - 1.0f) * (0.5f + 0.5f * mm_sin01(x * 1.5f)); }
     case L_ECHO:  return mm_sin01(x * 6.0f + t * 1.1f);
+    case L_PADS:  { uint32_t h = (uint32_t)(x * 80.0f) * 3266489917u ^ frame * 668265263u; h ^= h >> 15;   /* your groove: pulses + grit */
+                    float sq = mm_sin01(x * 2.5f - t * 0.9f) > 0.3f ? 1.0f : -0.4f;
+                    return 0.7f * sq + 0.3f * ((float)(h & 255u) / 127.5f - 1.0f); }
     default:      return mm_sin01(x * 4.0f + t * 0.5f) > 0.0f ? 1.0f : -1.0f;   /* perc: square */
     }
 }
 
 static void draw_waves(uint32_t now, unsigned mask)
 {
-    static const float gain[L_COUNT] = { 15.0f, 24.0f, 12.0f, 6.0f, 14.0f, 9.0f, 8.0f, 7.0f };
-    static const float idle[L_COUNT] = { 1.5f, 1.0f, 1.2f, 0.8f, 2.0f, 0.8f, 1.0f, 1.0f };
+    static const float gain[L_COUNT] = { 15.0f, 24.0f, 12.0f, 6.0f, 14.0f, 9.0f, 8.0f, 7.0f, 13.0f };
+    static const float idle[L_COUNT] = { 1.5f, 1.0f, 1.2f, 0.8f, 2.0f, 0.8f, 1.0f, 1.0f, 1.0f };
     lcd_clear();
     float t = (float)now * 0.001f;
     uint32_t frame = now / 40u;
@@ -540,10 +573,12 @@ static void knobs(const int16_t *enc)
     }
     if (enc[JK_K3]) {
         K.mutate = clampi(K.mutate + enc[JK_K3], 0, 10);
+        jg_style(K.mutate, K.notes);
         osd("MUTATE", K.mutate, 0, K.mutate == 0 ? "FROZEN" : K.mutate <= 3 ? "CALM" : K.mutate <= 7 ? "ALIVE" : "WILD");
     }
     if (enc[JK_K4]) {
         K.notes = clampi(K.notes + enc[JK_K4], -5, 5);
+        jg_style(K.mutate, K.notes);
         osd("NOTES", K.notes, 1, K.notes < -1 ? "SPARSE" : K.notes > 1 ? "BUSY" : "BALANCED");
     }
     if (enc[JK_SELECT]) {
@@ -571,6 +606,65 @@ static void draw_osd(void)
     for (int x = 0; x < MM_LCD_W; x += 2) lcd_set(x, 2 + 9 * lines);
 }
 
+/* ------------------------------------------------------------- OCT- / OCT+ */
+static const char *const LAYER_NAME[L_COUNT] = { "MELODY", "KICK", "BASS", "HATS", "DRONE", "CLAP", "ECHO", "PERC", "GROOVE" };
+
+/* OCT-: mute the sounds one by one, newest first (one always stays).
+ * OCT+: bring them back, last muted first.
+ * OCT- and OCT+ held together: only one random sound plays while you hold. */
+static void oct_buttons(uint32_t buttons, uint32_t bdown, const ms_clock *c)
+{
+    const uint32_t both = (1u << MM_B_OCT_DOWN) | (1u << MM_B_OCT_UP);
+    if ((buttons & both) == 0) S.oct_lock = 0;
+    if (S.solo_hold) {
+        if ((buttons & both) != both) {                     /* let go: everything as before */
+            S.solo_hold = 0; S.solo = 0xff; S.oct_lock = 1;
+            apply_now(c); plan_bar(c->bar + 1u);
+            osd("ALL BACK", 0x7fff, 0, 0);
+        }
+        return;
+    }
+    if (S.oct_lock) return;
+    if ((buttons & both) == both) {
+        unsigned audible = (unsigned)(c->mask ? c->mask : S.active) & S.active;
+        if (!audible) audible = S.active;
+        if (!audible) return;
+        unsigned k = rndn(bit_count(audible));
+        for (unsigned l = 0; l < L_COUNT; ++l) if ((audible >> l) & 1u) { if (!k--) { S.solo = (uint8_t)l; break; } }
+        S.solo_hold = 1; S.oct_first = 0xff;
+        apply_now(c); plan_bar(c->bar + 1u);
+        osd("ONLY", 0x7fff, 0, LAYER_NAME[S.solo]);
+        return;
+    }
+    if (S.oct_first == 0xff) {
+        if (bdown & (1u << MM_B_OCT_DOWN)) { S.oct_first = MM_B_OCT_DOWN; S.oct_t = S.now; }
+        else if (bdown & (1u << MM_B_OCT_UP)) { S.oct_first = MM_B_OCT_UP; S.oct_t = S.now; }
+        return;
+    }
+    if (S.now - S.oct_t < 70u) return;                      /* wait: maybe both are coming */
+    unsigned which = S.oct_first;
+    S.oct_first = 0xff;
+    if (which == MM_B_OCT_DOWN) {
+        unsigned left = S.active & ~S.user_mute & c->mask;   /* what you hear right now */
+        if (bit_count(left) <= 1u) { osd("LAST SOUND", 0x7fff, 0, "STAYS"); return; }
+        for (int i = (int)S.n_entry - 1; i >= 0; --i) {
+            unsigned l = S.entry[i];
+            if ((left >> l) & 1u) {
+                S.user_mute |= (uint16_t)(1u << l);
+                if (S.n_muted < L_COUNT) S.mute_stack[S.n_muted++] = (uint8_t)l;
+                osd("MUTE", 0x7fff, 0, LAYER_NAME[l]);
+                break;
+            }
+        }
+    } else {
+        if (!S.n_muted) { osd("ALL SOUNDS ON", 0x7fff, 0, 0); return; }
+        unsigned l = S.mute_stack[--S.n_muted];
+        S.user_mute &= (uint16_t)~(1u << l);
+        osd("UNMUTE", 0x7fff, 0, LAYER_NAME[l]);
+    }
+    apply_now(c); plan_bar(c->bar + 1u);
+}
+
 /* ------------------------------------------------------------- platform API */
 void johnny_init(uint32_t now)
 {
@@ -580,6 +674,8 @@ void johnny_init(uint32_t now)
     S.view = MM_VIEW_START; S.now = now;
     jl_init();
     S.planned_for = 0xffffffffu; S.block_bar = 0xffffffffu;
+    S.solo = 0xff; S.oct_first = 0xff;
+    jg_init(now);
     knobs_default();
     draw_start(); ++S.serial;
 }
@@ -616,8 +712,18 @@ void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons, const int16_t *e
     }
     if (S.view == MM_VIEW_WAVES && ms_running()) {
         ms_get_clock(&c);
+        for (unsigned d = 0; d < D_COUNT; ++d)            /* the drum pads on the panel buttons */
+            if ((bdown >> JOHNNY_PAD_BUTTON[d]) & 1u) { ms_pad_hit(d); jg_pad(d, &c); }
+        oct_buttons(buttons, bdown, &c);
         check_seed_done(&c, keys);
-        if (S.have_phrase && c.bar + 1u != S.planned_for) plan_bar(c.bar + 1u);
+        if (jg_tick(&c, (buttons & JOHNNY_PAD_MASK) != 0)) {   /* your groove starts looping */
+            activate(L_PADS);
+            if (S.have_phrase) S.arr[c.bar & 1u] |= (uint16_t)(1u << L_PADS);
+            apply_now(&c);
+            plan_bar(c.bar + 1u);
+        }
+        if (jg_recording()) apply_now(&c);                  /* the old groove waits while you tap */
+        if ((S.have_phrase || jg_have()) && c.bar + 1u != S.planned_for) plan_bar(c.bar + 1u);
         if (S.have_phrase && c.wraps != S.seen_wraps) {
             if (S.seen_wraps != 0xffffffffu) develop();
             S.seen_wraps = c.wraps;
@@ -631,7 +737,10 @@ void johnny_tick(uint32_t now, uint32_t keys, uint32_t buttons, const int16_t *e
         ms_clock lc = {0};
         int playing = S.view == MM_VIEW_WAVES && ms_running();
         if (playing) ms_get_clock(&lc);
-        jl_tick(now, playing, lc.bar, lc.step, down);
+        uint64_t base = 0;
+        if (playing && S.user_mute) base |= 1ull << MM_B_OCT_DOWN;     /* something is muted */
+        if (playing && S.solo < L_COUNT) base |= 1ull << MM_B_OCT_UP;  /* solo held */
+        jl_tick(now, playing, lc.bar, lc.step, down, base);
     }
 }
 

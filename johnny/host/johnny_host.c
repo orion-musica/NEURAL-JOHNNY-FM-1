@@ -8,6 +8,7 @@
 #include "johnny_app.h"
 #include "johnny_synth.h"
 #include "johnny_screen.h"
+#include "johnny_groove.h"
 
 static uint64_t led_state; static unsigned led_writes;
 void johnny_hal_led(unsigned index, int on) { if (on) led_state |= 1ull << index; else led_state &= ~(1ull << index); ++led_writes; }
@@ -60,7 +61,24 @@ int main(int argc, char **argv)
         if (now > t0 + 44 * 16 * STEP_MS && now < t0 + 48 * 16 * STEP_MS && tick_n % 160 == 0) enc[2] = 1;
         if (now > t0 + 20 * 16 * STEP_MS && now < t0 + 30 * 16 * STEP_MS && tick_n % 400 == 0) enc[6] = 1;
         if (now > t0 + 60 * 16 * STEP_MS && tick_n % 600 == 0) enc[4] = 1;
-        johnny_tick((uint32_t)now, keys, 0, enc);
+        /* pads: a groove tapped in bars 12-13 (kick FX, snare SCL, closed hat EDIT) */
+        uint32_t buttons = 0;
+        {
+            double b12 = t0 + 12 * 16 * STEP_MS;
+            for (int st = 0; st < 16; ++st) {
+                double at = b12 + st * STEP_MS + (st % 3 ? 6 : -5);
+                if (now >= at && now < at + 50) {
+                    if (st % 4 == 0) buttons |= 1u << 2;
+                    if (st == 4 || st == 12) buttons |= 1u << 3;
+                    if (st % 4 == 2) buttons |= 1u << 6;
+                }
+            }
+            /* OCT- three times at bars 30, 31, 32; OCT+ once at bar 33; both held in bars 36-37 */
+            for (int b = 30; b <= 32; ++b) { double at = t0 + b * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 0; }
+            { double at = t0 + 33 * 16 * STEP_MS + 100; if (now >= at && now < at + 150) buttons |= 1u << 1; }
+            { double at = t0 + 36 * 16 * STEP_MS + 100; if (now >= at && now < at + 2 * 16 * STEP_MS) buttons |= 3u; }
+        }
+        johnny_tick((uint32_t)now, keys, buttons, enc);
         memset(block, 0, sizeof block);
         johnny_audio_render(block, 128);
         for (unsigned i = 0; i < 256; ++i) {
@@ -75,8 +93,8 @@ int main(int argc, char **argv)
         if (ms_running() && c.bar != last_bar) {
             last_bar = c.bar;
             fprintf(log, "bar %3u  layers ", c.bar);
-            static const char *nm = "LKBHDCEP";
-            for (int l = 0; l < 8; ++l) fputc((c.mask >> l) & 1 ? nm[l] : '.', log);
+            static const char *nm = "LKBHDCEPG";
+            for (int l = 0; l < 9; ++l) fputc((c.mask >> l) & 1 ? nm[l] : '.', log);
             fprintf(log, "  leds %2d writes %5u repeats %u  ", __builtin_popcountll(led_state), led_writes, johnny_repeats());
             unsigned len, tonic; const uint8_t *t = johnny_debug_phrase(&len, &tonic);
             static const char *pc[12] = {"C","C#","D","D#","E","F","F#","G","G#","A","A#","B"};
@@ -85,6 +103,8 @@ int main(int argc, char **argv)
                 if (!t[i]) fputs(" .", log);
                 else { int m = (int)tonic + t[i] - 13; fprintf(log, " %s%d", pc[m % 12], m / 12 - 1); }
             }
+            { unsigned gl; const uint16_t *g = jg_debug(&gl);
+              if (gl) { fputs("\n          groove", log); for (unsigned i = 0; i < gl; ++i) { if (i && i % 16 == 0) fputc('|', log); fprintf(log, " %03x", g[i]); } } }
             fputc('\n', log);
         }
         if (nd < ndumps && now >= dumps[nd]) {
