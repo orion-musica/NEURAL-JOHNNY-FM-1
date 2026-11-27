@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en" class="t-auto s-1">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install Neural Johnny on the M-VAVE FM-1</title>
+<meta name="description" content="Install Neural Johnny, a TinyML melody-continuation app in hypnotic techno style, on the M-VAVE FM-1 from your browser. Requirements, steps, files and the way back to stock firmware.">
+<meta name="color-scheme" content="dark light">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<script>
+/* Apply saved display choices before the page paints (no flash of the wrong theme). */
+try { const s = JSON.parse(localStorage.getItem('johnny-site') || '{}');
+  const h = document.documentElement;
+  if (s.theme) h.classList.replace('t-auto', 't-' + s.theme);
+  if (s.size) h.classList.replace('s-1', 's-' + s.size);
+  if (s.wide) h.classList.add('wide'); } catch (e) {}
+</script>
+
+<style>
+/* VOICE: calm, plain, spoken first. IDEA: the FM-1's black screen with one small white message.
+   PICTURE: that screen, drawn large. COLOUR: black and white; one focus yellow that is never decoration.
+   TYPE: Atkinson Hyperlegible (made by the Braille Institute for low vision). LAYOUT: one reading column. */
+:root{--bg:#000;--ink:#fff;--quiet:#c8c8c8;--line:#5a5a5a;--focus:#ffd400;--card:#111}
+html.t-light{--bg:#fff;--ink:#000;--quiet:#333;--line:#767676;--focus:#0047ff;--card:#f2f2f2}
+html.t-yellow{--bg:#000;--ink:#ffeb3b;--quiet:#ffe866;--line:#ffeb3b;--focus:#fff;--card:#141400}
+@media (prefers-color-scheme: light){html.t-auto{--bg:#fff;--ink:#000;--quiet:#333;--line:#767676;--focus:#0047ff;--card:#f2f2f2}}
+html.s-1{font-size:112.5%}html.s-2{font-size:150%}html.s-3{font-size:200%}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Atkinson Hyperlegible',Verdana,Arial,sans-serif;line-height:1.6;overflow-x:clip}
+html.wide body{line-height:2;letter-spacing:.06em;word-spacing:.16em}
+html.wide p,html.wide li{margin-bottom:1.4em}
+a{color:var(--ink);text-decoration-thickness:2px;text-underline-offset:.2em}
+a:hover{text-decoration-thickness:4px}
+:focus-visible{outline:4px solid var(--focus);outline-offset:4px}
+.skip{position:absolute;left:1rem;top:-10rem;background:var(--ink);color:var(--bg);padding:.75rem 1rem;font-weight:700;z-index:10}
+.skip:focus{top:1rem}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:46rem;margin:0 auto;padding:0 1.25rem}
+header{border-bottom:2px solid var(--line);padding:1.25rem 0}
+.voice{display:flex;flex-wrap:wrap;gap:.75rem;align-items:center}
+button,select{font:inherit;color:var(--ink);background:var(--card);border:2px solid var(--ink);border-radius:.5rem;min-height:3rem;padding:.5rem 1rem;cursor:pointer}
+button.primary{background:var(--ink);color:var(--bg);font-weight:700}
+button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+details.opts{margin-top:1rem}
+details.opts summary{cursor:pointer;font-weight:700;min-height:2.75rem;display:flex;align-items:center}
+fieldset{border:2px solid var(--line);border-radius:.5rem;margin:.75rem 0;padding:.5rem 1rem 1rem}
+legend{font-weight:700;padding:0 .4rem}
+.choices{display:flex;flex-wrap:wrap;gap:.5rem 1.5rem}
+.choices label{display:flex;gap:.5rem;align-items:center;min-height:2.75rem;cursor:pointer}
+input[type=radio],input[type=checkbox]{width:1.4rem;height:1.4rem;accent-color:var(--ink)}
+.caption{margin-top:1rem;border-left:4px solid var(--ink);padding:.25rem 0 .25rem 1rem;font-size:1.15rem;min-height:2.5rem}
+.caption:empty{display:none}
+main{padding:2rem 0 3rem}
+h1{font-size:2.6rem;line-height:1.1;margin:.5rem 0 .75rem}
+h2{font-size:1.6rem;line-height:1.2;margin:3rem 0 .75rem;padding-top:1rem;border-top:2px solid var(--line)}
+h3{font-size:1.2rem;margin:1.5rem 0 .25rem}
+.lead{font-size:1.3rem}
+.screen{display:block;width:100%;max-width:24rem;margin:2rem auto;border:2px solid var(--line);border-radius:1rem;background:#000}
+.toc ul{padding-left:1.25rem}.toc li{margin:.35rem 0}
+table{border-collapse:collapse;width:100%;margin:1rem 0}
+caption{text-align:left;font-weight:700;padding-bottom:.5rem}
+th,td{border:2px solid var(--line);padding:.6rem .75rem;text-align:left;vertical-align:top}
+thead th{background:var(--card)}
+.note{border:3px solid var(--ink);border-radius:.5rem;padding:1rem 1.25rem;margin:1.5rem 0;background:var(--card)}
+.note strong{display:block;margin-bottom:.25rem}
+.big-links{display:flex;flex-wrap:wrap;gap:1rem;margin:1.5rem 0}
+.big-links a{display:inline-flex;align-items:center;min-height:3.25rem;padding:.6rem 1.25rem;border:2px solid var(--ink);border-radius:.5rem;font-weight:700;text-decoration:none}
+.big-links a:hover{background:var(--ink);color:var(--bg)}
+.reading{outline:3px dashed var(--focus);outline-offset:6px;background:var(--card)}
+footer{border-top:2px solid var(--line);padding:2rem 0 3rem;color:var(--quiet)}
+footer a{color:var(--quiet)}
+
+/* ---- pictures ---- */
+.hero{max-width:64rem;margin:0 auto;padding:0 1.25rem}
+.device{display:block;width:100%;height:auto;margin:1.5rem 0 .5rem}
+.device .glow{opacity:0;animation:wave 1.6s ease-out 2 both}
+@keyframes wave{0%{opacity:0}18%{opacity:.95}60%{opacity:0}100%{opacity:0}}
+@media (prefers-reduced-motion:reduce){.device .glow{animation:none;opacity:0}.device .still{opacity:.9}}
+.device-cap{color:var(--quiet);text-align:center;margin:0 0 1rem}
+ol.steps{list-style:none;counter-reset:step;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12.5rem),1fr));gap:1rem}
+ol.steps li{counter-increment:step;background:var(--card);border:2px solid var(--line);border-radius:1rem;padding:1rem 1.1rem;margin:0}
+ol.steps li::before{content:counter(step);display:inline-grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:var(--ink);color:var(--bg);font-weight:700;margin-right:.6rem}
+ol.steps svg{display:block;width:3rem;height:3rem;margin:.6rem 0 .4rem;color:var(--ink)}
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:1rem;margin:1.5rem 0}
+.shots figure{margin:0;text-align:center}
+.shots img{display:block;width:100%;aspect-ratio:5/3;image-rendering:pixelated;background:#000;border:2px solid var(--line);border-radius:.75rem}
+.shots figcaption{margin-top:.5rem;color:var(--quiet)}
+.crates{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:1.25rem;margin-top:1.5rem}
+.crate{background:var(--card);border:2px solid var(--line);border-radius:1rem;overflow:hidden}
+.crate svg{display:block;width:100%;height:auto;aspect-ratio:1;background:#000}
+.crate div{padding:.9rem 1rem 1.1rem}.crate h3{margin:0 0 .3rem}.crate p{margin:0;color:var(--quiet)}
+.c1{--a:#4be3a4}.c2{--a:#ff8a3d}.c3{--a:#7aa7ff}.c4{--a:#ff5ce1}.c5{--a:#ff4040}
+html.t-yellow .crate{--a:#ffeb3b}
+.ears{display:block;width:100%;max-width:30rem;height:auto;margin:1.5rem auto;color:var(--ink)}
+@media (max-width:600px){h1{font-size:2rem}.voice button{width:100%}th,td{padding:.5rem}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+@media (forced-colors:active){button.primary,button[aria-pressed="true"]{forced-color-adjust:auto}}
+/* ---- site navigation, shared by every page ---- */
+nav.site{border-bottom:2px solid var(--line)}
+.navrow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.5rem 1.5rem;padding-top:.6rem;padding-bottom:.6rem}
+.brand{font-weight:700;font-size:1.15rem;text-decoration:none;display:inline-flex;align-items:center;gap:.5rem;min-height:2.75rem}
+nav.site ul{list-style:none;display:flex;flex-wrap:wrap;gap:.25rem 1.25rem;margin:0;padding:0}
+nav.site li a{display:inline-flex;align-items:center;min-height:2.75rem}
+nav.site a[aria-current="page"]{text-decoration-thickness:4px;font-weight:700}
+.wide-wrap{max-width:64rem;margin:0 auto;padding:0 1.25rem}
+/* ---- status panels and fact lists (installer) ---- */
+.panel{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,18rem),1fr));gap:1.25rem;margin:1.5rem 0}
+.lcdbox{background:#000;color:#fff;border:2px solid var(--line);border-radius:1rem;padding:1.5rem;text-align:center;font-family:ui-monospace,Menlo,Consolas,monospace}
+.lcdbox .state{font-size:1.4rem;font-weight:700;letter-spacing:.08em;margin:.5rem 0}
+.lcdbox p{color:#c8c8c8;margin:.25rem 0 0}
+.checks{list-style:none;padding:0;margin:.5rem 0}
+.checks li{display:flex;gap:.75rem;align-items:baseline;padding:.35rem 0}
+.checks .mark{display:inline-block;min-width:2.6rem;text-align:center;font-weight:700;border:2px solid var(--ink);border-radius:.4rem;padding:0 .3rem}
+.checks li.ok .mark{background:var(--ink);color:var(--bg)}
+dl.facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:.35rem 1rem;margin:.5rem 0}
+dl.facts dt{font-weight:700}dl.facts dd{margin:0;overflow-wrap:anywhere}
+a.button{display:inline-flex;align-items:center;min-height:3.25rem;padding:.6rem 1.4rem;border-radius:.5rem;background:var(--ink);color:var(--bg);font-weight:700;text-decoration:none;border:2px solid var(--ink)}
+a.button[aria-disabled="true"]{background:transparent;color:var(--quiet);border-style:dashed;pointer-events:none}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr));gap:1rem;margin:1rem 0}
+.cards > *{background:var(--card);border:2px solid var(--line);border-radius:1rem;padding:1rem 1.1rem}
+.cards h3{margin:0 0 .3rem}.cards p{margin:0;color:var(--quiet)}
+a.cardlink{display:block;text-decoration:none}a.cardlink:hover{border-color:var(--ink)}
+a.cardlink h3{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:.2em}
+.faq details{border-bottom:2px solid var(--line);padding:.6rem 0}
+.faq summary{cursor:pointer;font-weight:700;min-height:2.75rem;display:flex;align-items:center}
+
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<nav class="site" aria-label="Site">
+  <div class="wrap navrow">
+    <a class="brand" href="../"><span aria-hidden="true">&#9835;</span> Neural Johnny</a>
+    <ul>
+      <li><a href="../">Home</a></li>
+      <li><a href="../play/">Play</a></li>
+      <li><a href="../install/" aria-current="page">Install</a></li>
+      <li><a href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1">Source code</a></li>
+    </ul>
+  </div>
+</nav>
+
+<header>
+  <div class="wrap">
+    <details class="opts">
+      <summary>Display options</summary>
+      <fieldset>
+        <legend>Text size</legend>
+        <div class="choices">
+          <label><input type="radio" name="size" value="1"> Normal</label>
+          <label><input type="radio" name="size" value="2"> Large</label>
+          <label><input type="radio" name="size" value="3"> Very large</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Colours</legend>
+        <div class="choices">
+          <label><input type="radio" name="theme" value="auto"> Like my device</label>
+          <label><input type="radio" name="theme" value="dark"> White on black</label>
+          <label><input type="radio" name="theme" value="light"> Black on white</label>
+          <label><input type="radio" name="theme" value="yellow"> Yellow on black</label>
+        </div>
+      </fieldset>
+      <fieldset>
+        <legend>Spacing</legend>
+        <div class="choices"><label><input type="checkbox" id="wide"> Wider spacing between lines, words and letters</label></div>
+      </fieldset>
+    </details>
+
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <div class="wrap">
+    <h1>Install Neural Johnny</h1>
+    <p class="lead">Put Neural Johnny on your M-VAVE FM-1 from the browser, over a USB cable. No drivers, no apps. About five minutes.</p>
+    <div class="note" role="note"><strong>Experimental</strong>Neural Johnny is new and has been tested on very few devices. Back up first, and keep the FM-1 powered and connected until the installer says it is done. The original firmware is built into the installer, so you can always go back.</div>
+
+    <section aria-labelledby="install">
+      <h2 id="install">Installer</h2>
+      <p>This page checks your browser and the build, then opens the official FM1 Open installer.</p>
+      <div class="panel">
+        <div>
+          <div class="lcdbox" aria-live="polite" aria-atomic="true">
+            <span class="sr">Status:</span>
+            <div class="state" id="state">CHECKING…</div>
+            <p id="state-note">Please wait.</p>
+          </div>
+          <p style="margin-top:1rem"><a class="button" id="start" href="flasher.html" aria-disabled="true">Start the installer</a></p>
+          <p id="start-note">The installer opens in this tab. Use Chrome or Edge on a computer.</p>
+        </div>
+        <div>
+          <h3>Ready check</h3>
+          <ul class="checks">
+            <li id="c-build"><span class="mark">…</span><span>Firmware built and included</span></li>
+            <li id="c-midi"><span class="mark">…</span><span>Browser can talk to MIDI devices</span></li>
+            <li id="c-secure"><span class="mark">…</span><span>Page opened over a secure address</span></li>
+            <li id="c-desk"><span class="mark">…</span><span>A computer, not a phone</span></li>
+          </ul>
+          <h3>This build</h3>
+          <dl class="facts">
+            <dt>File</dt><dd>NeuralJohnny.fwsc</dd>
+            <dt>Size</dt><dd id="f-size">–</dd>
+            <dt>Built</dt><dd id="f-date">–</dd>
+            <dt>SHA-256</dt><dd id="f-hash">–</dd>
+            <dt>Base</dt><dd>FM1 Open V14 engine</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section aria-labelledby="need">
+      <h2 id="need">What you need</h2>
+      <div class="cards">
+        <div><h3>An FM-1</h3><p>Any M-VAVE FM-1, on its original V15 firmware or an FM1 Open build. Charged, or on USB power.</p></div>
+        <div><h3>A USB data cable</h3><p>One that carries data, not just power. Plug it straight into the computer, not into a hub.</p></div>
+        <div><h3>Chrome or Edge</h3><p>On Windows, macOS or Linux. Allow MIDI and SysEx when the browser asks.</p></div>
+      </div>
+    </section>
+
+    <section aria-labelledby="steps">
+      <h2 id="steps">Steps</h2>
+      <ol class="steps">
+        <li><h3>Back up</h3><p>Export the projects, voices and samples you want to keep in the M-VAVE workbench. Neural Johnny itself saves nothing, but a firmware update is always a good moment for a backup. Close DAWs and other MIDI apps.</p></li>
+        <li><h3>Connect</h3><p>Switch the FM-1 on, plug in the cable, choose <strong>Start the installer</strong>, then <strong>Connect device</strong>. Allow MIDI and SysEx.</p></li>
+        <li><h3>First time from V15</h3><p>The installer finds <code>FM-1_015</code>. Choose <strong>Enable force flash and reconnect</strong>. Nothing is written yet. Coming from FM1 Open? Skip this step.</p></li>
+        <li><h3>Install</h3><p>Tick the backup confirmation, choose <strong>Force flash</strong> or <strong>Install</strong>, and accept the warning. Do not unplug while it writes.</p></li>
+        <li><h3>Play</h3><p>Wait for the sample check to finish. The FM-1 restarts on the green Neural Johnny start screen.</p></li>
+      </ol>
+      <p>The installer page itself comes from FM1 Open and looks different from this website.</p>
+    </section>
+
+    <section aria-labelledby="files">
+      <h2 id="files">Files</h2>
+      <p>Everything is open. Check the firmware against its SHA-256 before installing by hand.</p>
+      <div class="cards">
+        <a class="cardlink" href="flasher.html"><h3>Web installer</h3><p>One HTML file with Neural Johnny and the original V15 inside. Save it to install offline.</p></a>
+        <a class="cardlink" href="../downloads/NeuralJohnny.fwsc"><h3>NeuralJohnny.fwsc</h3><p>The firmware package on its own.</p></a>
+        <a class="cardlink" href="../downloads/SHA256SUMS.txt"><h3>SHA256SUMS</h3><p>Checksum of the firmware package.</p></a>
+        <a class="cardlink" href="../downloads/JOHNNY_README.md"><h3>Player notes</h3><p>Controls, modes and storage, as plain text.</p></a>
+        <a class="cardlink" id="src" href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1"><h3>Source code</h3><p>Full source, GPL-3.0 with the FM1 Open linking exception.</p></a>
+      </div>
+    </section>
+
+    <section aria-labelledby="stock">
+      <h2 id="stock">Back to the original firmware</h2>
+      <p>Changed your mind? Open the installer and choose <strong>Restore original V15</strong>. It installs the original firmware and restores all 128 factory voices.</p>
+      <div class="note" role="note"><strong>Progress</strong>The original firmware does not keep Neural Johnny's stars and settings. To come back to Neural Johnny later, use force flash again.</div>
+    </section>
+
+    <section aria-labelledby="help" class="faq">
+      <h2 id="help">Help</h2>
+      <details><summary>The browser does not find the FM-1</summary><p>Close other MIDI apps and installer tabs, switch the FM-1 off and on, reconnect the cable and choose Connect again. Connection details in the installer show which MIDI ports the browser found.</p></details>
+      <details><summary>The start button does not work</summary><p>The ready check above says why. Wrong browser: use Chrome or Edge on a computer; Safari, Firefox and phones cannot talk to MIDI devices. Opened as a file: run <code>OPEN-SITE.bat</code> so the page runs on localhost.</p></details>
+      <details><summary>The update stopped halfway</summary><p>Keep the cable in, switch the FM-1 off and on, reconnect and run the installer again with force flash.</p></details>
+      <details><summary>It says NOT BUILT</summary><p>The firmware has to be compiled once. On Windows run <code>INSTALL-JOHNNY.bat</code> in the project folder. It builds Neural Johnny and opens this page on <code>http://localhost:8766</code>.</p></details>
+      <details><summary>Will I lose my projects?</summary><p>An update with the same storage layout keeps valid project slots and the sample bank; Neural Johnny does not write to them. Switching from V15 does not keep them. Back up either way.</p></details>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p>Neural Johnny by BULØKE. Code written together with Claude. Built on FM1 Open by M-VAVE; not affiliated with M-VAVE. GPL-3.0 licence.</p>
+    <p><a href="../#statement">Accessibility of this website</a> · <a href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1/issues">Report a problem</a></p>
+  </div>
+</footer>
+
+<div id="status" class="sr" role="status" aria-live="polite"></div>
+
+
+<script src="../assets/build-info.js"></script>
+<script>
+{
+/* Shared by every page: status messages and the remembered display options. */
+const root = document.documentElement;
+const status = document.getElementById('status');
+const say = msg => { status.textContent = ''; setTimeout(() => { status.textContent = msg; }, 50); };
+/* ---------- display options (remembered) ---------- */
+let prefs = {};
+try { prefs = JSON.parse(localStorage.getItem('johnny-site') || '{}'); } catch (e) {}
+const save = () => { try { localStorage.setItem('johnny-site', JSON.stringify(prefs)); } catch (e) {} };
+const setClass = (prefix, value) => { [...root.classList].filter(c => c.startsWith(prefix)).forEach(c => root.classList.remove(c)); root.classList.add(prefix + value); };
+for (const r of document.querySelectorAll('input[name=size]')) {
+  r.checked = r.value === String(prefs.size || 1);
+  r.addEventListener('change', () => { prefs.size = r.value; setClass('s-', r.value); save(); say('Text size ' + r.parentElement.textContent.trim()); });
+}
+for (const r of document.querySelectorAll('input[name=theme]')) {
+  r.checked = r.value === (prefs.theme || 'auto');
+  r.addEventListener('change', () => { prefs.theme = r.value; setClass('t-', r.value); save(); say('Colours: ' + r.parentElement.textContent.trim()); });
+}
+const wide = document.getElementById('wide');
+wide.checked = !!prefs.wide;
+wide.addEventListener('change', () => { prefs.wide = wide.checked; root.classList.toggle('wide', wide.checked); save(); say(wide.checked ? 'Wide spacing on' : 'Wide spacing off'); });
+
+
+const $ = id => document.getElementById(id);
+const mark = (id, ok) => { const li = $(id); li.className = ok ? 'ok' : ''; li.querySelector('.mark').textContent = ok ? 'OK' : 'NO'; return ok; };
+const build = window.HLV_BUILD;
+const built = mark('c-build', !!(build && build.built));
+const midi = mark('c-midi', typeof navigator.requestMIDIAccess === 'function');
+const secure = mark('c-secure', window.isSecureContext === true && location.protocol !== 'file:');
+const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+mark('c-desk', !mobile);
+if (built) {
+  $('f-size').textContent = (build.bytes / 1024).toFixed(1) + ' KB';
+  $('f-date').textContent = build.date;
+  $('f-hash').textContent = build.sha256;
+}
+const start = $('start');
+let state, note;
+if (!built) { state = 'NOT BUILT'; note = 'Compile once with INSTALL-JOHNNY.bat (see Help).'; }
+else if (!midi || mobile) { state = 'WRONG BROWSER'; note = 'Open this page in Chrome or Edge on a computer.'; }
+else if (!secure) { state = 'OPEN VIA SERVER'; note = 'Run OPEN-SITE.bat, or use the https site.'; }
+else { state = 'READY'; note = 'Connect the FM-1 and choose Start the installer.'; start.setAttribute('aria-disabled', 'false'); }
+if (built && start.getAttribute('aria-disabled') === 'true') $('start-note').textContent = 'You can still save the installer from Files and open it in a supported browser.';
+if (start.getAttribute('aria-disabled') === 'true') start.removeAttribute('href');
+$('state').textContent = state;
+$('state-note').textContent = note;
+}
+</script>
+</body>
+</html>

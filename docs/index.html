@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural Johnny for the M-VAVE FM-1</title>
+<meta name="description" content="Neural Johnny: play 1-16 notes on the M-VAVE FM-1 and a tiny on-device AI model keeps your melody going as a hypnotic techno track, drawn as oscillator lines on a 90s phone LCD.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=VT323&display=swap" rel="stylesheet">
+<style>
+/* VOICE: late-night hypnotic techno, short sentences.
+   IDEA: a 90s handset's green LCD seen in a dark club.
+   PICTURE: an oscillator line drawn in square LCD pixels.
+   COLOUR: near-black room, pale LCD green, olive ink. TYPE: Silkscreen + VT323. LAYOUT: one column. */
+:root{color-scheme:dark;--room:#0d0f0c;--lcd:#c7f0d8;--ink:#43523d;--dim:#9aa991}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--room);color:var(--lcd);font:20px/1.45 'VT323',ui-monospace,monospace;overflow-x:clip}
+.wrap{max-width:760px;margin:0 auto;padding:clamp(28px,6vw,72px) 18px}
+h1{font:400 clamp(36px,8vw,56px)/1.05 'Silkscreen',monospace;margin:0 0 14px}
+h2{font:400 20px 'Silkscreen',monospace;margin:42px 0 8px}
+.lead{font-size:24px;color:var(--lcd);margin:0 0 26px}
+p,li{color:var(--dim)} b{color:var(--lcd);font-weight:400}
+.lcd{background:var(--lcd);border-radius:10px;padding:18px;box-shadow:0 0 0 10px #1a1e16,0 0 0 11px #353b2f}
+.lcd svg{display:block;width:100%;height:auto}
+.actions{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 0}
+.actions a{font:13px 'Silkscreen',monospace;color:var(--ink);background:var(--lcd);text-decoration:none;padding:14px 20px;border-radius:24px;min-height:44px}
+.actions a.alt{background:none;color:var(--lcd);border:1px solid #3b4334}
+.actions a:focus-visible{outline:2px solid var(--lcd);outline-offset:3px}
+ol{padding-left:1.2em}
+footer{margin-top:56px;color:#5d6956;font-size:18px}
+footer a{color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>NEURAL JOHNNY</h1>
+  <p class="lead">Play 1&ndash;16 notes on the FM-1. A tiny AI model carries your melody on: a little different every time round, layer by layer, deep into hypnotic techno.</p>
+  <div class="lcd" aria-hidden="true"><svg id="wave" viewBox="0 0 80 30" shape-rendering="crispEdges"></svg></div>
+  <div class="actions">
+    <a href="play/">Play in the browser</a>
+    <a class="alt" href="install/">Install on the FM-1</a>
+    <a class="alt" href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1">Source code</a>
+  </div>
+
+  <h2>How it plays</h2>
+  <ol>
+    <li>The start screen asks for an idea. Play <b>1 to 16 notes</b>, then stop.</li>
+    <li>The model answers right away with a <b>continuation of the same length</b>, and changes a note or two on <b>every repeat</b>.</li>
+    <li>After 8 bars the first extra sound comes in, then <b>one more every 8 bars</b>: kick, bass, hats, drone, clap, echo, perc.</li>
+    <li>Sounds <b>take breaths</b> of 1, 2 or 4 bars, and now and then the floor drops out for a breakdown.</li>
+    <li>Play a <b>new melody at any moment</b>. The model starts continuing that one; the sounds not in yet arrive in their own time.</li>
+  </ol>
+  <p>Every sound is one oscillator line in square pixels on a two-tone phone LCD. That is the whole picture.</p>
+
+  <h2>The model</h2>
+  <p>A small neural network of about <b>8,400 weights in 8-bit integers</b> runs on the FM-1 itself. It looks at the last few 16ths, the same step one bar and half a phrase back, and where it is in the bar, and picks the next note or a rest. It is kept inside the key and range of your melody. Trained on a rule-built set of hypnotic techno motifs; you can retrain it on your own loops.</p>
+
+  <footer>By BUL&Oslash;KE &middot; GPL-3.0 with the FM1 Open linking exception &middot; built on <a href="https://github.com/m-vave/fm1_open">FM1 Open</a></footer>
+</div>
+<script>
+{
+const svg = document.getElementById('wave');
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const frame = t => {
+  let out = '';
+  const lines = [[1.3, .6, 9], [3, -.8, 5], [.7, .2, 11]];
+  for (const [cyc, sp, amp] of lines) {
+    let prev = null;
+    for (let x = 0; x < 80; x++) {
+      const y = Math.round(15 + amp * Math.sin(2 * Math.PI * (x / 80 * cyc + t * sp)) * (.6 + .4 * Math.sin(t * 2 + cyc)));
+      const a = prev === null ? y : prev, lo = Math.min(a, y), hi = Math.max(a, y);
+      out += '<rect x="' + x + '" y="' + (hi - lo > 1 ? lo + (a < y ? 1 : 0) : y) + '" width="1" height="' + Math.max(1, hi - lo) + '" fill="#43523d"/>';
+      prev = y;
+    }
+  }
+  svg.innerHTML = out;
+  if (!still) requestAnimationFrame(() => frame(performance.now() / 1000));
+};
+frame(0);
+}
+</script>
+</body>
+</html>

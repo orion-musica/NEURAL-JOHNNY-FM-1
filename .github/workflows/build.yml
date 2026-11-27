@@ -1,0 +1,69 @@
+# Neural Johnny: build the firmware and the installer site in the cloud (GitHub Actions).
+# Runs on every push to main, or by hand: Actions > build > Run workflow.
+# Result: the "Neural Johnny" download (firmware, installer, checksum) and, if GitHub Pages
+# is set to "GitHub Actions", the live site with a ready installer.
+name: build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JieLi Windows toolchain 2.5.3
+        shell: pwsh
+        timeout-minutes: 40
+        run: ./tools/ci/Install-JieLi.ps1
+
+      - name: Build Neural Johnny (firmware + installer + site)
+        shell: pwsh
+        timeout-minutes: 30
+        run: |
+          $env:FM1_SOURCE_URL = "https://github.com/${{ github.repository }}/archive/${{ github.sha }}.zip"
+          ./tools/Make-Site.ps1
+
+      - name: Size report (only when the build fails)
+        if: failure()
+        shell: pwsh
+        run: |
+          $nm = Join-Path $env:FM1_PI32_TOOLCHAIN 'bin\llvm-nm.exe'
+          $elf = 'build\dx7\sdk.elf'
+          if (!(Test-Path $elf)) { Write-Host 'No ELF to inspect.'; exit 0 }
+          $all = & $nm --print-size --size-sort --radix=d $elf
+          Write-Host '--- 100 largest symbols ---'
+          $all | Select-Object -Last 100 | ForEach-Object { Write-Host $_ }
+          Write-Host '--- echo / screen symbols ---'
+          $all | Select-String 'echo|sp_|syn_|screen|paint|draw|text|glyph|font' | Select-Object -Last 80 | ForEach-Object { Write-Host $_ }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 'Neural-Johnny'
+          path: |
+            docs/downloads/
+            docs/install/flasher.html
+          if-no-files-found: error
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  pages:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4
