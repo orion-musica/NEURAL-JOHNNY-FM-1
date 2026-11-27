@@ -609,7 +609,8 @@ static void draw_osd(void)
 /* ------------------------------------------------------------- OCT- / OCT+ */
 static const char *const LAYER_NAME[L_COUNT] = { "MELODY", "KICK", "BASS", "HATS", "DRONE", "CLAP", "ECHO", "PERC", "GROOVE" };
 
-/* OCT-: mute the sounds one by one, newest first, the melody last (then
+/* OCT-: mute the sounds one by one: your drum groove first, then newest
+ * first, the melody last (then
  * silence: play a new melody, or OCT+).
  * OCT+: bring them back, last muted first.
  * OCT- and OCT+ held together: only one random sound plays while you hold. */
@@ -647,6 +648,7 @@ static void oct_buttons(uint32_t buttons, uint32_t bdown, const ms_clock *c)
     S.oct_first = 0xff;
     if (which == MM_B_OCT_DOWN) {
         unsigned left = S.active & ~S.user_mute & c->mask;   /* what you hear right now */
+        if (((S.active & ~S.user_mute) >> L_PADS) & 1u) left = 1u << L_PADS;   /* your drum groove always goes first */
         if (!left) { osd("ALL MUTED", 0x7fff, 0, "PLAY OR OCT+"); return; }
         for (int i = (int)S.n_entry - 1; i >= 0; --i) {
             unsigned l = S.entry[i];

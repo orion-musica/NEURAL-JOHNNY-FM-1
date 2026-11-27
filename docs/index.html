@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neural Johnny: an AI that keeps your melody going, on the M-VAVE FM-1</title>
-<meta name="description" content="Neural Johnny puts a tiny neural network inside the M-VAVE FM-1. Play 1 to 16 notes and it keeps your melody going as a hypnotic techno track, a new sound every 8 bars, steered by the knobs, drawn as oscillator lines on a 90s phone screen. Free and open source.">
+<meta name="description" content="Neural Johnny puts two tiny neural networks inside the M-VAVE FM-1. Play 1 to 16 notes and it keeps your melody going as a hypnotic techno track, a new sound every 8 bars; tap a groove on the drum pads and it continues that too. Knobs to steer it, OCT to mute and solo, oscillator lines on a 90s phone screen, neural light waves on every key. Tested on hardware. Free and open source.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -121,7 +121,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
       <div class="card"><h3>A sound that evolves</h3><p><b>PRESETS</b> morphs the melody's sound in 64 small steps through eight FM timbres, from SOFT to BELL, ACID and VAPOUR.</p></div>
       <div class="card"><h3>Hands on the model</h3><p><b>K3</b> sets how much it mutates, from a frozen loop to wild. <b>K4</b> makes it play sparser or busier. Plus filter, drive, tempo and note length.</p></div>
       <div class="card"><h3>Your drums, continued</h3><p>The 11 buttons from FX to REC are drum pads: kick, snare, clap, rim, hats, toms, ride, shaker, cowbell. Tap a groove and a second model keeps it going as an extra layer.</p></div>
-      <div class="card"><h3>Mute and solo</h3><p><b>OCT&minus;</b> takes the sounds out one by one, down to silence, <b>OCT+</b> brings them back. Hold both: only one random sound plays until you let go.</p></div>
+      <div class="card"><h3>Mute and solo</h3><p><b>OCT&minus;</b> takes the sounds out one by one, your drum groove first, down to silence; <b>OCT+</b> brings them back. Hold both: only one random sound plays until you let go.</p></div>
       <div class="card"><h3>Neural lights</h3><p>All 41 key and button lights fire in time: every note sends an impulse along the keys, every bar line a wave through the panel.</p></div>
     </div>
   </div>
@@ -137,7 +137,9 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
       <li><div><h3>Let it grow</h3><p>Every repeat sounds a little different. Every 8 bars a new sound joins, in this order:</p>
         <ul class="order"><li><b>0</b>MELODY</li><li><b>8</b>KICK</li><li><b>16</b>BASS</li><li><b>24</b>HATS</li><li><b>32</b>DRONE</li><li><b>40</b>CLAP</li><li><b>48</b>ECHO</li><li><b>56</b>PERC</li></ul></div></li>
       <li><div><h3>Steer it</h3><p>Turn the knobs: change the sound, open or close the filter, let the model mutate more or less. A short label shows on the screen while you turn.</p></div></li>
-      <li><div><h3>Change your mind</h3><p>Play a new melody at any moment. Everything keeps playing, the model carries the new motif on, and the sounds that were not in yet arrive in their own time. <kbd>HOME</kbd> goes back to the start.</p></div></li>
+      <li><div><h3>Add your drums</h3><p>Tap a groove on the buttons <kbd>FX</kbd> to <kbd>REC</kbd> and stop. The groove model answers and keeps it going as an extra layer, GROOVE.</p></div></li>
+      <li><div><h3>Strip it down</h3><p><kbd>OCT&minus;</kbd> mutes your groove first, then the other sounds one by one; <kbd>OCT+</kbd> brings them back. Hold both for one random sound alone, let go for everything again.</p></div></li>
+      <li><div><h3>Change your mind</h3><p>Play a new melody at any moment. Everything keeps playing, the model carries the new motif on, and the sounds that were not in yet arrive in their own time. A melody you muted with <kbd>OCT&minus;</kbd> comes back from your first note. <kbd>HOME</kbd> goes back to the start.</p></div></li>
     </ol>
   </div>
 </section>
@@ -181,7 +183,7 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
     </table>
     </div>
     <div class="grid3" style="margin-top:18px">
-      <div class="card"><h3>OCT&minus;</h3><p>Mutes the sound you hear that came in last, then the one before; the melody goes last. Its light stays on while anything is muted. A muted melody comes back as soon as you play a new one.</p></div>
+      <div class="card"><h3>OCT&minus;</h3><p>The first press always mutes your drum groove. Then it mutes the sound you hear that came in last, then the one before; the melody goes last. Its light stays on while anything is muted. A muted melody comes back as soon as you play a new one.</p></div>
       <div class="card"><h3>OCT+</h3><p>Brings the muted sounds back, the last muted first.</p></div>
       <div class="card"><h3>Both, held</h3><p>Only one random sound that is playing stays, for as long as you hold. Let go and everything is back as it was.</p></div>
     </div>

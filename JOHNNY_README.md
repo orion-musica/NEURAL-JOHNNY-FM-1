@@ -52,8 +52,9 @@ DRUM PADS
   While you tap a new groove the old one waits. K3 and K4 steer it too.
 
 OCT- / OCT+
-  OCT-  mutes the sound you hear that came in last, then the one before; the melody
-        goes last, then all is quiet
+  OCT-  the first press always mutes your drum groove (GROOVE); then it mutes the sound
+        you hear that came in last, then the one before; the melody goes last, then
+        all is quiet
   OCT+  brings them back, last muted first
   A muted melody comes back by itself from the first note of a new melody.
   both held: only one random playing sound stays; let go and all is back as before

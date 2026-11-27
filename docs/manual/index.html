@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Neural Johnny manual</title>
-<meta name="description" content="The complete manual for Neural Johnny, TinyML melody-continuation firmware for the M-VAVE FM-1: first start, playing a melody, the model's answer, the layers, the knobs, the screen, the neural lights and troubleshooting.">
+<meta name="description" content="The complete manual for Neural Johnny, TinyML firmware for the M-VAVE FM-1: first start, playing a melody, the model's answer, the layers, the knobs, the evolving sound, the drum pads and groove model, OCT mute and solo, the screen, the neural lights and troubleshooting.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -95,7 +95,7 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <tr><td><kbd>ALGORITHM</kbd></td><td>LENGTH of the melody's notes.</td></tr>
 <tr><td><kbd>MASTER</kbd></td><td>Volume.</td></tr>
 <tr><td><kbd>FX</kbd> &hellip; <kbd>REC</kbd></td><td>11 drum pads (<a href="#pads">section 10</a>).</td></tr>
-<tr><td><kbd>OCT&minus;</kbd> / <kbd>OCT+</kbd></td><td>Mute sounds one by one / bring them back; both held: one sound alone (<a href="#oct">section 11</a>).</td></tr>
+<tr><td><kbd>OCT&minus;</kbd> / <kbd>OCT+</kbd></td><td>Mute sounds one by one, your drum groove first / bring them back; both held: one sound alone (<a href="#oct">section 11</a>).</td></tr>
 <tr><td><kbd>HOME</kbd></td><td>Stop and go back to the start screen. All knobs go back to their start values.</td></tr>
 </tbody></table></div>
 <p>The knobs, pads and OCT buttons only work while music plays, not on the start screen: start with a melody.</p>
@@ -207,7 +207,7 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <div class="table"><table>
 <thead><tr><th scope="col">Press</th><th scope="col">Does</th><th scope="col">Label</th></tr></thead>
 <tbody>
-<tr><td><kbd>OCT&minus;</kbd></td><td>Mutes the sound you hear that came in last. Press again for the one before. The melody, the oldest sound, goes last; after it there is silence (<code>ALL MUTED</code>) until you press <kbd>OCT+</kbd> or play a new melody. The <kbd>OCT&minus;</kbd> light stays on while anything is muted.</td><td><code>MUTE PERC</code></td></tr>
+<tr><td><kbd>OCT&minus;</kbd></td><td>The first press always mutes your drum groove (GROOVE), if you tapped one. After that it mutes the sound you hear that came in last; press again for the one before. The melody, the oldest sound, goes last; after it there is silence (<code>ALL MUTED</code>) until you press <kbd>OCT+</kbd> or play a new melody. The <kbd>OCT&minus;</kbd> light stays on while anything is muted.</td><td><code>MUTE PERC</code></td></tr>
 <tr><td><kbd>OCT+</kbd></td><td>Brings back the sound muted last, then the one before.</td><td><code>UNMUTE PERC</code></td></tr>
 <tr><td><kbd>OCT&minus;</kbd> + <kbd>OCT+</kbd> held</td><td>Only one random sound from those playing stays, for as long as you hold both; breaths are skipped for it. Let go and everything is back exactly as before. The <kbd>OCT+</kbd> light is on while you hold.</td><td><code>ONLY BASS</code>, then <code>ALL BACK</code></td></tr>
 </tbody></table></div>
@@ -256,7 +256,7 @@ footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--d
 <h3>The pads do nothing</h3>
 <p>Pads work once the music runs. Play a melody first.</p>
 <h3>Some sounds are gone</h3>
-<p>You muted them with <kbd>OCT&minus;</kbd> (its light is on). Press <kbd>OCT+</kbd> until <code>ALL SOUNDS ON</code>.</p>
+<p>You muted them with <kbd>OCT&minus;</kbd> (its light is on); the first press takes your drum groove. Press <kbd>OCT+</kbd> until <code>ALL SOUNDS ON</code>.</p>
 <h3>Back to the start</h3>
 <p><kbd>HOME</kbd> stops the music, clears the melody and resets every knob.</p>
 </main>
