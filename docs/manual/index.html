@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural Johnny manual</title>
+<meta name="description" content="The complete manual for Neural Johnny, TinyML melody-continuation firmware for the M-VAVE FM-1: first start, playing a melody, the model's answer, the layers, the knobs, the screen, the neural lights and troubleshooting.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#c7f0d8;--panel:#b5e2c4;--line:#8fb49a;--ink:#43523d;--text:#2b3627;--dim:#4d5e48;--pixel:'Silkscreen',monospace;--mono:'IBM Plex Mono',ui-monospace,monospace}
+*{box-sizing:border-box;min-width:0}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:16px;line-height:1.65}
+a{color:var(--text);text-decoration-thickness:2px}a:hover{color:#000}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+nav{border-bottom:3px solid var(--ink)}
+nav .bar{max-width:1180px;margin:0 auto;padding:0 24px;display:flex;align-items:center;gap:18px;min-height:56px;flex-wrap:wrap}
+nav .brand{font-family:var(--pixel);font-weight:700;font-size:20px;text-decoration:none;letter-spacing:1px}
+nav .links{display:flex;gap:16px;margin-left:auto;font-size:14px;flex-wrap:wrap}
+nav .links a{color:var(--dim);text-decoration:none}
+.layout{max-width:1180px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;gap:40px}
+aside{flex:1 1 220px;max-width:260px;padding:32px 0}
+aside h2{font-family:var(--pixel);font-size:14px;letter-spacing:2px;margin:0 0 10px}
+aside ol{margin:0;padding-left:22px;font-size:14px}
+aside li{margin:4px 0}
+main{flex:999 1 560px;min-width:0;padding:32px 0 64px}
+h1{font-family:var(--pixel);font-size:clamp(34px,6vw,56px);line-height:1;margin:0 0 12px;letter-spacing:1px}
+h2{font-family:var(--pixel);font-size:24px;margin:48px 0 12px;letter-spacing:1px;padding-top:16px;border-top:3px solid var(--ink)}
+h3{font-family:var(--pixel);font-size:15px;margin:24px 0 6px;letter-spacing:1px}
+p,li{max-width:760px}
+kbd{border:2px solid var(--ink);padding:0 6px;font-family:var(--pixel);font-size:12px;white-space:nowrap;background:var(--panel)}
+code{background:var(--panel);padding:1px 6px}
+.lead{font-size:18px;color:var(--dim);margin:0 0 20px}
+.box{border:3px solid var(--ink);background:var(--panel);padding:14px 18px;margin:16px 0;max-width:780px}
+.table{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;font-size:15px;min-width:520px;width:100%}
+th,td{text-align:left;padding:9px 12px;border-bottom:2px dashed var(--line);vertical-align:top}
+th{font-family:var(--pixel);font-weight:400;font-size:12px;letter-spacing:1px;border-bottom:3px solid var(--ink)}
+figure{margin:16px 0;max-width:360px}
+figure img{display:block;width:100%;height:auto;image-rendering:pixelated;border:4px solid var(--ink)}
+figcaption{font-size:14px;color:var(--dim);margin-top:6px}
+footer{border-top:3px solid var(--ink);padding:24px;font-size:14px;color:var(--dim);text-align:center}
+</style>
+</head>
+<body>
+<nav aria-label="Main">
+  <div class="bar">
+    <a class="brand" href="../">NEURAL JOHNNY</a>
+    <div class="links"><a href="../">Home</a><a href="../install/">Install</a><a href="../play/">Try it</a><a href="#knobs">Knobs</a><a href="#help">Help</a></div>
+  </div>
+</nav>
+<div class="layout">
+<aside aria-label="Contents">
+  <h2>CONTENTS</h2>
+  <ol>
+    <li><a href="#start">First start</a></li>
+    <li><a href="#panel">The panel</a></li>
+    <li><a href="#melody">Playing your melody</a></li>
+    <li><a href="#answer">The answer</a></li>
+    <li><a href="#layers">Layers and breaths</a></li>
+    <li><a href="#new">A new melody</a></li>
+    <li><a href="#knobs">Knobs</a></li>
+    <li><a href="#sound">The evolving sound</a></li>
+    <li><a href="#model">Steering the model</a></li>
+    <li><a href="#screen">The screen</a></li>
+    <li><a href="#lights">Neural lights</a></li>
+    <li><a href="#inside">How the model works</a></li>
+    <li><a href="#help">Troubleshooting</a></li>
+  </ol>
+</aside>
+<main>
+<h1>Manual</h1>
+<p class="lead">Neural Johnny 0.1 BETA for the M-VAVE FM-1. Built on FM1 Open V14.</p>
+<div class="box"><strong>Names used here.</strong> Buttons are written like <kbd>HOME</kbd>. The seven encoders are <kbd>SELECT</kbd>, <kbd>ALGORITHM</kbd>, <kbd>PRESETS</kbd> and <kbd>K1</kbd>&ndash;<kbd>K4</kbd> (the four knobs under the screen). <kbd>MASTER</kbd> is the volume. The keyboard has 27 keys, F3 to G5.</div>
+
+<h2 id="start">1. First start</h2>
+<p>After installing, the FM-1 restarts on the start screen: <code>NEURAL JOHNNY</code>, <code>PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON.</code>, a blinking cursor and <code>ORION-MUSICA</code>. Nothing plays yet: Johnny waits for your idea. While it waits, the key and button lights spark slowly.</p>
+<figure><img src="../assets/boot.png" width="480" height="480" alt="The start screen"><figcaption>The start screen. These are the only words Johnny shows, apart from knob labels.</figcaption></figure>
+
+<h2 id="panel">2. The panel</h2>
+<div class="table"><table>
+<thead><tr><th scope="col">Control</th><th scope="col">Does</th></tr></thead>
+<tbody>
+<tr><td>Keys</td><td>Play a melody: the first one, or a new one at any time.</td></tr>
+<tr><td><kbd>PRESETS</kbd></td><td>SOUND: the melody's sound evolves.</td></tr>
+<tr><td><kbd>K1</kbd></td><td>FILTER: low-pass to the left, high-pass to the right.</td></tr>
+<tr><td><kbd>K2</kbd></td><td>DRIVE: saturation.</td></tr>
+<tr><td><kbd>K3</kbd></td><td>MUTATE: how much the model changes every repeat.</td></tr>
+<tr><td><kbd>K4</kbd></td><td>NOTES: sparser or busier answers.</td></tr>
+<tr><td><kbd>SELECT</kbd></td><td>TEMPO, 118 to 140 BPM.</td></tr>
+<tr><td><kbd>ALGORITHM</kbd></td><td>LENGTH of the melody's notes.</td></tr>
+<tr><td><kbd>MASTER</kbd></td><td>Volume.</td></tr>
+<tr><td><kbd>HOME</kbd></td><td>Stop and go back to the start screen. All knobs go back to their start values.</td></tr>
+</tbody></table></div>
+<p>The other buttons do nothing in Neural Johnny. The knobs only work while music plays, not on the start screen.</p>
+
+<h2 id="melody">3. Playing your melody</h2>
+<p>Play 1 to 16 notes. The first note starts a silent clock at 132 BPM; it becomes the first sixteenth of bar 1. Every note you play is snapped to the nearest sixteenth, so you do not need perfect timing. You hear your notes as you play them, and every key you press sends a light impulse along the keyboard.</p>
+<p>Johnny decides your melody is finished when one of these happens:</p>
+<ul>
+<li>you leave 4 silent sixteenths before a bar line;</li>
+<li>your melody ran to the end of its bar and nothing follows in the first three sixteenths of the next one;</li>
+<li>you played 16 notes;</li>
+<li>you filled 2 whole bars.</li>
+</ul>
+<div class="box">A melody that starts late in a bar (on its last four sixteenths) counts from the next bar line, so it is not cut in half.</div>
+
+<h2 id="answer">4. The answer</h2>
+<p>Right on the next sixteenth the model plays its answer, the same length as your melody: a 1-bar melody gets a 1-bar answer (a 2-bar loop), a 2-bar melody gets a 2-bar answer (a 4-bar loop). Then your melody and the answer loop.</p>
+<p>Your notes always stay as you played them. On every repeat the model rewrites one or two steps of its own answer, so the loop is never quite the same. It keeps the answer about as sparse as your melody and now and then drifts back towards its first version, so it develops without wandering off. <kbd>K3</kbd> and <kbd>K4</kbd> change all of this (<a href="#model">section 9</a>).</p>
+
+<h2 id="layers">5. Layers and breaths</h2>
+<p>For the first 8 bars the melody plays alone. Then one sound joins every 8 bars, always on the first beat of an 8-bar phrase:</p>
+<div class="table"><table>
+<thead><tr><th scope="col">Bar</th><th scope="col">Sound</th><th scope="col">Plays</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>MELODY</td><td>Your melody and the model's answer, FM sound (<kbd>PRESETS</kbd>).</td></tr>
+<tr><td>8</td><td>KICK</td><td>Four on the floor. It also ducks the bass, drone and echo, so the groove pumps.</td></tr>
+<tr><td>16</td><td>BASS</td><td>A rolling bass on the root of your melody, in one of five patterns.</td></tr>
+<tr><td>24</td><td>HATS</td><td>Open hats off the beat.</td></tr>
+<tr><td>32</td><td>DRONE</td><td>Root and fifth, slowly filtered, the hypnotic floor.</td></tr>
+<tr><td>40</td><td>CLAP</td><td>On 2 and 4.</td></tr>
+<tr><td>48</td><td>ECHO</td><td>Some of the melody's notes again, a dotted eighth later and an octave up.</td></tr>
+<tr><td>56</td><td>PERC</td><td>A metallic Euclidean pattern on the root and fifth.</td></tr>
+</tbody></table></div>
+<p>Once a few sounds play, they start taking <b>breaths</b>: one sound rests for 1, 2 or 4 bars and comes back exactly on the next 8-bar line. A sound that has just come in does not rest straight away. With five or more sounds in, kick, bass and hats sometimes drop out together for a 4-bar <b>breakdown</b>, and sometimes even the melody holds its breath for a bar.</p>
+
+<h2 id="new">6. A new melody</h2>
+<p>Play new notes at any time. Everything keeps playing, the model's melody waits while you play, and as soon as you stop (same rules as in <a href="#melody">section 3</a>) Johnny carries the new motif on. The bass, drone and perc move to the new root.</p>
+<p>After a new melody the sounds that were not in yet no longer come in one by one: each 8-bar line, one of them may join, in any order.</p>
+
+<h2 id="knobs">7. Knobs</h2>
+<p>While you turn a knob, its name and value show at the top of the screen for about a second, then only the lines are left.</p>
+<div class="table"><table>
+<thead><tr><th scope="col">Knob</th><th scope="col">Label</th><th scope="col">Range</th><th scope="col">Start</th></tr></thead>
+<tbody>
+<tr><td><kbd>PRESETS</kbd></td><td>SOUND 1&ndash;64, e.g. <code>HOLLOW&gt;BELL</code></td><td>64 steps, endless</td><td>SOFT</td></tr>
+<tr><td><kbd>K1</kbd></td><td>LOW-PASS / FILTER OFF / HIGH-PASS</td><td>&minus;100 &hellip; +100 in steps of 10</td><td>OFF</td></tr>
+<tr><td><kbd>K2</kbd></td><td>DRIVE</td><td>0 &hellip; 100</td><td>0</td></tr>
+<tr><td><kbd>K3</kbd></td><td>MUTATE: FROZEN, CALM, ALIVE, WILD</td><td>0 &hellip; 10</td><td>5</td></tr>
+<tr><td><kbd>K4</kbd></td><td>NOTES: SPARSE, BALANCED, BUSY</td><td>&minus;5 &hellip; +5</td><td>0</td></tr>
+<tr><td><kbd>SELECT</kbd></td><td>TEMPO</td><td>118 &hellip; 140 BPM</td><td>132</td></tr>
+<tr><td><kbd>ALGORITHM</kbd></td><td>LENGTH: STACCATO, PLUCK, LEGATO</td><td>15 &hellip; 120 %</td><td>55</td></tr>
+</tbody></table></div>
+<h3>Filter</h3>
+<p><kbd>K1</kbd> is a DJ filter on the whole mix. Turn left to close a low-pass: the track gets darker and muffled, down to 160 Hz. Turn right for a high-pass that takes the bass and kick away, up to 2.5 kHz. Back in the middle it is off. Close it over a breakdown and open it on the next 8-bar line.</p>
+<h3>Drive</h3>
+<p><kbd>K2</kbd> saturates the whole mix: warmer at first, rough and loud-feeling at 100. The level is compensated, so it does not just get louder.</p>
+<figure><img src="../assets/filter.png" width="480" height="480" alt="Knob label LOW-PASS 80, K1 FILTER at the top of the screen"><figcaption><kbd>K1</kbd> turned left: LOW-PASS 80.</figcaption></figure>
+
+<h2 id="sound">8. The evolving sound</h2>
+<p><kbd>PRESETS</kbd> does not jump between presets. It walks through eight FM timbres, eight small steps from one to the next, 64 positions in all, and round again. Every detent moves the sound a little, so you can stop anywhere between two timbres.</p>
+<div class="table"><table>
+<thead><tr><th scope="col">Sound</th><th scope="col">Character</th></tr></thead>
+<tbody>
+<tr><td>1 SOFT</td><td>Round, gentle pluck. The start sound.</td></tr>
+<tr><td>9 HOLLOW</td><td>An octave in the modulator: hollow, woody.</td></tr>
+<tr><td>17 BELL</td><td>Bright bell, longer ring.</td></tr>
+<tr><td>25 GLASS</td><td>Thin and glassy, short shine.</td></tr>
+<tr><td>33 METAL</td><td>Inharmonic, metallic clang.</td></tr>
+<tr><td>41 ACID</td><td>Strong, fast-closing brightness, dark body.</td></tr>
+<tr><td>49 REED</td><td>Low modulator, slow fade of brightness: reedy, nasal.</td></tr>
+<tr><td>57 VAPOUR</td><td>Soft and long, almost a pad.</td></tr>
+</tbody></table></div>
+<p>The label shows the step and the way it is heading, for example <code>SOUND 12</code> and <code>HOLLOW&gt;BELL</code>. The sound also applies to the notes you play yourself.</p>
+<figure><img src="../assets/sound.png" width="480" height="480" alt="Knob label SOUND 2, SOFT>HOLLOW"><figcaption>One detent from the start: SOUND 2, on its way from SOFT to HOLLOW.</figcaption></figure>
+
+<h2 id="model">9. Steering the model</h2>
+<h3>K3 MUTATE</h3>
+<div class="table"><table>
+<thead><tr><th scope="col">Value</th><th scope="col">Label</th><th scope="col">The model</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>FROZEN</td><td>Changes nothing: the loop stays exactly as it is.</td></tr>
+<tr><td>1&ndash;3</td><td>CALM</td><td>Sometimes changes one step, and only picks its most likely notes.</td></tr>
+<tr><td>4&ndash;7</td><td>ALIVE</td><td>One or two steps every repeat (the start setting).</td></tr>
+<tr><td>8&ndash;10</td><td>WILD</td><td>Two to four steps every repeat, also less likely notes, and it rarely drifts back.</td></tr>
+</tbody></table></div>
+<p>Turn it to 0 to lock a loop you love; turn it up for a solo.</p>
+<h3>K4 NOTES</h3>
+<p>Left (SPARSE) makes rests more likely and keeps the answer close to your number of notes or fewer. Right (BUSY) lets the answer fill up with more notes than you played. The change shows up over the next repeats, as the model rewrites its answer.</p>
+<h3>SELECT TEMPO and ALGORITHM LENGTH</h3>
+<p>Tempo changes at once and keeps everything in time. LENGTH sets how long each melody note sounds, from short STACCATO stabs to LEGATO notes that run into the next.</p>
+
+<h2 id="screen">10. The screen</h2>
+<p>The screen is an 80 &times; 80 grid of square pixels in two shades of green, like an old phone. Every sound is one oscillator line across the middle; the lines overlap. Each line has its own shape (soft wave for the melody, slow swell for the kick, saw for the bass, noise for hats and clap, square for the perc) and swings with its sound's volume. The melody's line gets more waves the higher the note. A sound that rests loses its line until it comes back.</p>
+<figure><img src="../assets/full.png" width="480" height="480" alt="Seven oscillator lines"><figcaption>All seven sounds in.</figcaption></figure>
+
+<h2 id="lights">11. Neural lights</h2>
+<p>All 41 lights take part: the 27 keys and the 14 buttons. They are on or off, so Johnny draws with movement. Impulses run along the keys and, now and then, branch over to the button row, like signals in a net of neurons.</p>
+<div class="table"><table>
+<thead><tr><th scope="col">Sound</th><th scope="col">Light</th></tr></thead>
+<tbody>
+<tr><td>MELODY</td><td>Two impulses leave the key of the note, left and right.</td></tr>
+<tr><td>BAR LINE</td><td>With the kick in: a wave through the keys one way, the buttons the other.</td></tr>
+<tr><td>KICK</td><td>A short, fast burst somewhere on the keys.</td></tr>
+<tr><td>BASS</td><td>The key of the root note blinks.</td></tr>
+<tr><td>HATS, PERC</td><td>Single lights fire for a moment.</td></tr>
+<tr><td>CLAP</td><td>An impulse along the buttons.</td></tr>
+<tr><td>ECHO</td><td>A slower impulse on the buttons.</td></tr>
+<tr><td>YOUR NOTES</td><td>Impulses from the key you play.</td></tr>
+<tr><td>START SCREEN</td><td>Slow, quiet sparks.</td></tr>
+</tbody></table></div>
+
+<h2 id="inside">12. How the model works</h2>
+<p>The model is a small neural network (a multilayer perceptron) with about 8,400 weights stored as 8-bit integers; it runs on the FM-1 itself: about 8,400 multiply-adds for each step it writes. For each sixteenth it looks at the last four steps, the steps half a bar, one bar and half the loop back, the last note played, and where it is in the bar, and gives a probability for every possible next step: a rest, or a note from an octave below to two octaves above the root.</p>
+<p>Johnny then keeps only the notes in the key of your melody and within a few semitones of its range, adjusts the odds with <kbd>K3</kbd> and <kbd>K4</kbd>, and draws one. The root and key come from your melody: the note you play most, first and lowest, in the minor-type scale that holds all of your notes.</p>
+<p>It was trained on a rule-built collection of hypnotic techno motifs: minor, phrygian and dorian modes, pedal tones, arpeggios, short cells repeated with small changes, answers that land on the root or the fifth. The training script in the source (<code>johnny/tools/train_model.py</code>) can mix in your own loops from <code>johnny/data/</code>.</p>
+
+<h2 id="help">13. Troubleshooting</h2>
+<h3>Nothing plays</h3>
+<p>Turn <kbd>MASTER</kbd> up and play a few notes. Johnny plays nothing before your first melody.</p>
+<h3>The answer starts too early or too late</h3>
+<p>Johnny decides you are done after a short gap. If it starts while you still want to play, keep playing: the new notes become a new melody. To play a longer idea, keep notes going into the second bar.</p>
+<h3>It never changes</h3>
+<p><kbd>K3</kbd> is on 0 (FROZEN). Turn it up.</p>
+<h3>It is too busy or too empty</h3>
+<p>Turn <kbd>K4</kbd> left for fewer notes, right for more. Give it a few repeats.</p>
+<h3>Everything sounds dull or thin</h3>
+<p><kbd>K1</kbd> is not in the middle. Turn it back to FILTER OFF.</p>
+<h3>Back to the start</h3>
+<p><kbd>HOME</kbd> stops the music, clears the melody and resets every knob.</p>
+</main>
+</div>
+<footer>Neural Johnny by Orion-Musica · code written together with Claude · built on FM1 Open · GPL-3.0</footer>
+</body>
+</html>

@@ -2,7 +2,8 @@ NEURAL JOHNNY - player notes
 ========================
 
 START
-  The start screen shows the name and "PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON."
+  The start screen shows the name, "PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON."
+  and a small ORION-MUSICA.
   Press any key: that note is the first 16th of bar 1. A silent 132 BPM clock starts.
 
 YOUR MELODY
@@ -50,7 +51,8 @@ CONTROLS
   K1         FILTER: left = low-pass (darker), right = high-pass (thinner), middle = off
   K2         DRIVE: saturation of the whole mix
   K3         MUTATE 0..10: how much the model changes on every repeat.
-             0 = frozen loop, 1-3 calm (safe notes), 4-7 alive, 8-10 wild
+             0 = frozen loop, 1-3 calm (safe notes, sometimes one step), 4-7 alive
+             (one or two steps), 8-10 wild (two to four steps, rarer notes)
   K4         NOTES -5..+5: sparser or busier answers
   SELECT     TEMPO 118..140 BPM
   ALGORITHM  LENGTH: note length of the melody, staccato to legato
@@ -60,3 +62,5 @@ CONTROLS
 
 STORAGE
   Neural Johnny saves nothing in the FM-1's Flash.
+
+Full manual with pictures: https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/manual/

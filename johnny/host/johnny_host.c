@@ -43,7 +43,9 @@ int main(int argc, char **argv)
     johnny_init(0);
     int32_t block[256]; int16_t pcm[256];
     uint32_t keys = 0; double now = 0.0; unsigned last_bar = 0xffffffffu;
-    int dumps[] = { 500, 6000, 30000, 60000, 90000, 120000 }; unsigned nd = 0;
+    int dumps[16] = { 500, 6000, 30000, 60000, 90000, 120000 }; unsigned nd = 0, ndumps = 6;
+    const char *shots = getenv("SHOTS");          /* SHOTS="500,9000,..." in ms, ascending */
+    if (shots) { ndumps = 0; for (const char *q = shots; *q && ndumps < 16; ) { dumps[ndumps++] = atoi(q); while (*q && *q != ',') ++q; if (*q) ++q; } }
     static uint16_t band[240 * 240];
     float peak = 0.0f; double sumsq = 0.0;
     for (unsigned f = 0; f < frames_total; f += 128) {
@@ -85,7 +87,7 @@ int main(int argc, char **argv)
             }
             fputc('\n', log);
         }
-        if (nd < sizeof dumps / sizeof dumps[0] && now >= dumps[nd]) {
+        if (nd < ndumps && now >= dumps[nd]) {
             johnny_screen_band(0, 240, band);
             snprintf(path, sizeof path, "%s/screen_%d.raw", dir, dumps[nd]);
             FILE *s = fopen(path, "wb"); fwrite(band, 2, 240 * 240, s); fclose(s);

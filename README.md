@@ -1,16 +1,16 @@
 # Neural Johnny
 
-A TinyML melody-continuation app for the **M-VAVE FM-1**, by BULØKE.
-Play 1–16 notes; a tiny on-device model carries your melody on as a hypnotic
-techno track, developing it a little on every repeat and adding one sound every
-8 bars. Knobs shape it live: PRESETS morphs the lead's sound, K1 filter, K2 drive,
-K3 how much the model mutates, K4 how busy it plays, SELECT tempo, ALGORITHM note length.
-Each sound is a waving oscillator line in square pixels on a two-tone
-90s-phone LCD.
+A tiny neural network inside the **M-VAVE FM-1**, by Orion-Musica.
+Play 1–16 notes and it keeps your melody going as a hypnotic techno track: it answers,
+changes a note or two on every repeat, brings in a new sound every 8 bars and lets them
+breathe. The knobs steer it (PRESETS morphs the melody's sound through 64 steps, K1 filter,
+K2 drive, K3 how much the model mutates, K4 how busy it plays, SELECT tempo, ALGORITHM note
+length). Every sound is an oscillator line in square pixels on a two-tone 90s-phone LCD, and
+all 41 key and button lights fire like a neural net in time with the music.
 
 [**Play in the browser**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/play/) ·
 [**Install on the FM-1**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/install/) ·
-[Player notes](JOHNNY_README.md)
+[**Manual**](https://orion-musica.github.io/NEURAL-JOHNNY-FM-1/manual/) · [Player notes](JOHNNY_README.md)
 
 > **Experimental.** First builds for device testing. Back up your FM-1 projects before installing.
 
@@ -28,9 +28,10 @@ Each sound is a waving oscillator line in square pixels on a two-tone
 | `app/screen.c`, `app/audio_output.c` | two small hooks (`NEURAL_JOHNNY` in `app/johnny/johnny_fm1.h`) |
 | `johnny/tools/train_model.py` | builds the training set, trains the model, writes `johnny_weights.h` |
 | `johnny/data/` | your own loops to train on (optional, see its README) |
+| `johnny/tools/make_shots.py` | renders the website's screen pictures with the firmware's drawing code |
 | `johnny/tools/build_wasm.sh` | builds the browser version `docs/play/index.html` from the same C |
 | `johnny/host/` | PC test: a scripted player, writes a WAV, a bar log and screen dumps |
-| `docs/` | GitHub Pages: start page, `play/`, `install/` web installer |
+| `docs/` | GitHub Pages: start page, `manual/`, `play/`, `install/` web installer |
 
 The rest of the tree is the FM1 Open SDK (V14) and the firmware base it ships with
 (see `README.FM1-OPEN.md`, `THIRD_PARTY.md`).

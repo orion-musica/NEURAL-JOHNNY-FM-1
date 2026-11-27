@@ -252,9 +252,9 @@ static void develop(void)
     ++S.reps;
     if (S.rec || ms_pending()) return;
     if (K.mutate == 0) return;                   /* K3 at zero: the loop is frozen */
-    unsigned changes = K.mutate <= 2 ? (rndf() < 0.5f ? 1u : 0u)
-                     : K.mutate <= 6 ? 1u + (rndf() < 0.3f ? 1u : 0u)
-                     : 2u + (unsigned)(K.mutate - 7) / 2u + (rndf() < 0.5f ? 1u : 0u);
+    unsigned changes = K.mutate <= 3 ? (rndf() < 0.5f ? 1u : 0u)
+                     : K.mutate <= 7 ? 1u + (rndf() < 0.3f ? 1u : 0u)
+                     : 2u + (unsigned)(K.mutate - 8) / 2u + (rndf() < 0.5f ? 1u : 0u);
     for (unsigned c = 0; c < changes; ++c) change_one();
     /* hypnotic means sparse: an answer much busier than the motif loses a note */
     unsigned seed_n = 0, ans_n = 0;
@@ -392,6 +392,23 @@ static void lcd_text(int x, int y, const char *s)
 }
 static void lcd_text_c(int y, const char *s) { lcd_text((MM_LCD_W - (int)strlen(s) * 6 + 1) / 2, y, s); }
 
+/* Tiny 3x5 letters, only the ones the start screen's credit needs. */
+static const struct { char c; uint8_t rows[5]; } TINY[] = {
+    {'O', {7, 5, 5, 5, 7}}, {'R', {6, 5, 6, 5, 5}}, {'I', {7, 2, 2, 2, 7}}, {'N', {5, 7, 7, 7, 5}},
+    {'-', {0, 0, 7, 0, 0}}, {'M', {5, 7, 7, 5, 5}}, {'U', {5, 5, 5, 5, 7}}, {'S', {7, 4, 7, 1, 7}},
+    {'C', {7, 4, 4, 4, 7}}, {'A', {2, 5, 7, 5, 5}},
+};
+static void lcd_tiny_c(int y, const char *s)
+{
+    int x = (MM_LCD_W - ((int)strlen(s) * 4 - 1)) / 2;
+    for (; *s; ++s, x += 4)
+        for (unsigned g = 0; g < sizeof TINY / sizeof TINY[0]; ++g)
+            if (TINY[g].c == *s)
+                for (int r = 0; r < 5; ++r)
+                    for (int b = 0; b < 3; ++b)
+                        if (TINY[g].rows[r] & (4u >> b)) lcd_set(x + b, y + r);
+}
+
 static void draw_start(void)
 {
     lcd_clear();
@@ -405,7 +422,7 @@ static void draw_start(void)
     lcd_text_c(41, "NOTES. I WILL");
     lcd_text_c(50, "CARRY YOUR");
     lcd_text_c(59, "MELODY ON.");
-    lcd_text_c(71, "BUL@KE");
+    lcd_tiny_c(73, "ORION-MUSICA");
     if ((S.now / 500u) & 1u)                              /* blinking phone cursor */
         for (int y = 59; y < 66; ++y) for (int x = 70; x < 74; ++x) lcd_set(x, y);
 }

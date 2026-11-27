@@ -1,92 +1,281 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Neural Johnny for the M-VAVE FM-1</title>
-<meta name="description" content="Neural Johnny: play 1-16 notes on the M-VAVE FM-1 and a tiny on-device AI model keeps your melody going as a hypnotic techno track, drawn as oscillator lines on a 90s phone LCD.">
+<title>Neural Johnny: an AI that keeps your melody going, on the M-VAVE FM-1</title>
+<meta name="description" content="Neural Johnny puts a tiny neural network inside the M-VAVE FM-1. Play 1 to 16 notes and it keeps your melody going as a hypnotic techno track, a new sound every 8 bars, steered by the knobs, drawn as oscillator lines on a 90s phone screen. Free and open source.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=VT323&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* VOICE: late-night hypnotic techno, short sentences.
-   IDEA: a 90s handset's green LCD seen in a dark club.
-   PICTURE: an oscillator line drawn in square LCD pixels.
-   COLOUR: near-black room, pale LCD green, olive ink. TYPE: Silkscreen + VT323. LAYOUT: one column. */
-:root{color-scheme:dark;--room:#0d0f0c;--lcd:#c7f0d8;--ink:#43523d;--dim:#9aa991}
+:root{--bg:#c7f0d8;--panel:#b5e2c4;--line:#8fb49a;--ink:#43523d;--text:#2b3627;--dim:#4d5e48;--dark:#141a13;--glow:#d9ffe4;--off:#2a3627;--pixel:'Silkscreen',monospace;--mono:'IBM Plex Mono',ui-monospace,monospace}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--room);color:var(--lcd);font:20px/1.45 'VT323',ui-monospace,monospace;overflow-x:clip}
-.wrap{max-width:760px;margin:0 auto;padding:clamp(28px,6vw,72px) 18px}
-h1{font:400 clamp(36px,8vw,56px)/1.05 'Silkscreen',monospace;margin:0 0 14px}
-h2{font:400 20px 'Silkscreen',monospace;margin:42px 0 8px}
-.lead{font-size:24px;color:var(--lcd);margin:0 0 26px}
-p,li{color:var(--dim)} b{color:var(--lcd);font-weight:400}
-.lcd{background:var(--lcd);border-radius:10px;padding:18px;box-shadow:0 0 0 10px #1a1e16,0 0 0 11px #353b2f}
-.lcd svg{display:block;width:100%;height:auto}
-.actions{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 0}
-.actions a{font:13px 'Silkscreen',monospace;color:var(--ink);background:var(--lcd);text-decoration:none;padding:14px 20px;border-radius:24px;min-height:44px}
-.actions a.alt{background:none;color:var(--lcd);border:1px solid #3b4334}
-.actions a:focus-visible{outline:2px solid var(--lcd);outline-offset:3px}
-ol{padding-left:1.2em}
-footer{margin-top:56px;color:#5d6956;font-size:18px}
-footer a{color:var(--dim)}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--mono);font-size:16px;line-height:1.6;overflow-x:clip}
+a{color:var(--text);text-decoration-thickness:2px}a:hover{color:#000}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.wrap{max-width:1080px;margin:0 auto;padding:0 24px}
+code,kbd{background:var(--panel);padding:1px 6px;font-size:.95em;font-family:var(--mono)}
+kbd{border:2px solid var(--ink);padding:0 6px;font-family:var(--pixel);font-size:12px;white-space:nowrap}
+nav{border-bottom:3px solid var(--ink)}
+nav .wrap{display:flex;align-items:center;gap:18px;min-height:56px;flex-wrap:wrap}
+nav .brand{font-family:var(--pixel);font-weight:700;font-size:20px;text-decoration:none;letter-spacing:1px}
+nav .links{display:flex;gap:16px;margin-left:auto;flex-wrap:wrap;font-size:14px}
+nav .links a{color:var(--dim);text-decoration:none}nav .links a:hover{color:var(--text)}
+header.hero{padding:56px 0 48px;border-bottom:1px solid var(--line)}
+.hero .wrap{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:48px;align-items:center}
+.kicker{font-family:var(--pixel);letter-spacing:3px;font-size:14px;margin:0 0 12px}
+h1{font-family:var(--pixel);font-weight:700;font-size:clamp(44px,8vw,88px);line-height:.95;margin:0 0 8px;letter-spacing:2px}
+h1 small{display:block;font-size:.42em;letter-spacing:3px;margin-top:10px}
+.lead{font-size:18px;max-width:560px;margin:18px 0 28px}
+.actions{display:flex;gap:12px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:52px;padding:0 22px;font-family:var(--pixel);font-size:15px;text-decoration:none;border:3px solid var(--ink);color:var(--text);background:transparent}
+.btn.primary{background:var(--ink);color:var(--bg)}.btn.primary:hover{background:#000;color:var(--bg)}
+.btn:hover{background:var(--panel)}
+.device{background:var(--dark);padding:18px;border:4px solid #0b0f0a}
+.device img{display:block;width:100%;height:auto;image-rendering:pixelated;border:6px solid #0b0f0a}
+.net{display:grid;gap:5px;margin-top:14px}
+.net .btns{display:grid;grid-template-columns:repeat(14,minmax(0,1fr));gap:5px}
+.net .keys{display:grid;grid-template-columns:repeat(27,minmax(0,1fr));gap:2px}
+.net span{height:12px;background:var(--off);border:1px solid #0b0f0a}
+.net .keys span{height:26px}
+.net span.on{background:var(--glow);box-shadow:0 0 10px rgba(159,255,176,.65)}
+.note{font-size:13px;color:#9fc7ab;margin:10px 0 0;font-family:var(--mono)}
+h2{font-family:var(--pixel);font-size:28px;margin:0 0 14px;letter-spacing:1px}
+h3{font-family:var(--pixel);font-size:16px;margin:0 0 6px;letter-spacing:1px}
+section{padding:56px 0;border-bottom:1px solid var(--line)}
+.sub{color:var(--dim);max-width:720px;margin:0 0 28px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.card{border:3px solid var(--ink);padding:18px;background:transparent}
+.card p{margin:0;font-size:15px}
+.shots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+figure{margin:0}
+figure img{display:block;width:100%;height:auto;image-rendering:pixelated;border:4px solid var(--ink)}
+figcaption{font-size:14px;margin-top:8px;color:var(--dim)}
+figcaption b{font-family:var(--pixel);font-weight:400;color:var(--text);font-size:13px}
+.tablewrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:10px 12px;border-bottom:2px dashed var(--line);vertical-align:top}
+th{font-family:var(--pixel);font-weight:400;font-size:13px;letter-spacing:1px;border-bottom:3px solid var(--ink)}
+td:first-child{font-family:var(--pixel);font-size:13px;white-space:nowrap}
+.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.steps li{counter-increment:s;display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px;align-items:start}
+.steps li::before{content:counter(s);font-family:var(--pixel);font-size:22px;border:3px solid var(--ink);text-align:center;line-height:44px;height:50px}
+.steps p{margin:4px 0 0}
+.order{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 0;padding:0;list-style:none}
+.order li{font-family:var(--pixel);font-size:13px;border:3px solid var(--ink);padding:6px 10px}
+.order li b{font-weight:400;color:var(--dim);margin-right:6px}
+.warn{border:3px solid var(--ink);background:var(--panel);padding:14px 18px;font-size:15px;max-width:780px}
+footer{padding:32px 0 56px;font-size:14px;color:var(--dim)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+@media (max-width:860px){.hero .wrap,.grid3,.grid2{grid-template-columns:minmax(0,1fr)}.shots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.net .keys{gap:1px}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>NEURAL JOHNNY</h1>
-  <p class="lead">Play 1&ndash;16 notes on the FM-1. A tiny AI model carries your melody on: a little different every time round, layer by layer, deep into hypnotic techno.</p>
-  <div class="lcd" aria-hidden="true"><svg id="wave" viewBox="0 0 80 30" shape-rendering="crispEdges"></svg></div>
-  <div class="actions">
-    <a href="play/">Play in the browser</a>
-    <a class="alt" href="install/">Install on the FM-1</a>
-    <a class="alt" href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1">Source code</a>
+<nav aria-label="Main">
+  <div class="wrap">
+    <a class="brand" href="./">NEURAL JOHNNY</a>
+    <div class="links">
+      <a href="#features">Features</a><a href="#play">How it plays</a><a href="#knobs">Knobs</a><a href="#screens">Screens</a><a href="#lights">Lights</a><a href="#install">Install</a><a href="manual/">Manual</a><a href="play/">Try it</a><a id="gh" href="https://github.com/orion-musica/NEURAL-JOHNNY-FM-1">GitHub</a>
+    </div>
   </div>
+</nav>
 
-  <h2>How it plays</h2>
-  <ol>
-    <li>The start screen asks for an idea. Play <b>1 to 16 notes</b>, then stop.</li>
-    <li>The model answers right away with a <b>continuation of the same length</b>, and changes a note or two on <b>every repeat</b>.</li>
-    <li>After 8 bars the first extra sound comes in, then <b>one more every 8 bars</b>: kick, bass, hats, drone, clap, echo, perc.</li>
-    <li>Sounds <b>take breaths</b> of 1, 2 or 4 bars, and now and then the floor drops out for a breakdown.</li>
-    <li>Play a <b>new melody at any moment</b>. The model starts continuing that one; the sounds not in yet arrive in their own time.</li>
-  </ol>
+<header class="hero">
+  <div class="wrap">
+    <div>
+      <p class="kicker">FIRMWARE · M-VAVE FM-1 · BETA 0.1</p>
+      <h1>NEURAL<small>JOHNNY</small></h1>
+      <p class="lead">Play 1 to 16 notes. A tiny neural network inside the FM-1 keeps your melody going as a hypnotic techno track: it answers you, changes a note or two every time round, brings in a new sound every 8 bars and lets them breathe. Turn the knobs to steer it. Every sound is an oscillator line on a 90s phone screen, and the keys fire like neurons.</p>
+      <div class="actions">
+        <a class="btn primary" href="install/">INSTALL ›</a>
+        <a class="btn" href="play/">TRY IN BROWSER</a>
+        <a class="btn" href="manual/">MANUAL</a>
+      </div>
+    </div>
+    <div class="device" aria-label="The Neural Johnny screen with all seven sounds playing, and the panel lights under it">
+      <img src="assets/full.png" width="480" height="480" alt="Neural Johnny screen: seven oscillator lines in square pixels crossing the middle of a two-tone green LCD, one for each sound playing">
+      <div class="net" aria-hidden="true"><div class="btns" id="nbtns"></div><div class="keys" id="nkeys"></div></div>
+      <p class="note">Real screen, drawn by the firmware's own code in the host test. Under it: the 14 button lights and 27 key lights firing as a neural net.</p>
+    </div>
+  </div>
+</header>
 
-  <h2>Knobs</h2>
-  <ul>
-    <li><b>PRESETS</b>: the melody's sound evolves, a small step with every detent, through eight FM timbres from SOFT to BELL, ACID and VAPOUR.</li>
-    <li><b>K1 FILTER</b>: low-pass to the left, high-pass to the right. <b>K2 DRIVE</b>: saturation.</li>
-    <li><b>K3 MUTATE</b>: from a frozen loop to a wild model. <b>K4 NOTES</b>: sparser or busier answers.</li>
-    <li><b>SELECT</b>: tempo 118&ndash;140 BPM. <b>ALGORITHM</b>: note length, staccato to legato.</li>
-  </ul>
-  <p>Every sound is one oscillator line in square pixels on a two-tone phone LCD. That is the whole picture.</p>
-  <p>All 41 key and button lights fire like a neural net in time with the music: every note sends an impulse running along the keys, branching to the buttons, while the kick fires synaptic bursts and each bar line sends a wave through the whole keyboard.</p>
+<main>
+<section id="features">
+  <div class="wrap">
+    <h2>What's inside</h2>
+    <p class="sub">An instrument that listens and answers, on the FM-1's own keys, knobs, screen and lights. It runs on the FM1 Open V14 engine.</p>
+    <div class="grid3">
+      <div class="card"><h3>AI on the device</h3><p>A small neural network, about 8,400 weights in 8 bits, runs on the FM-1 itself. No phone, no cloud, no cable.</p></div>
+      <div class="card"><h3>Your motif, its answer</h3><p>You play 1 to 16 notes. It writes an answer of the same length, in the key and range you played, and loops both.</p></div>
+      <div class="card"><h3>Alive every repeat</h3><p>Each time round it changes a step or two of its answer, stays about as sparse as you, and now and then drifts back.</p></div>
+      <div class="card"><h3>Builds the track</h3><p>After 8 bars the kick comes in, then one more sound every 8 bars: bass, hats, drone, clap, echo, perc.</p></div>
+      <div class="card"><h3>Breaths</h3><p>Sounds rest for 1, 2 or 4 bars and come back on the 8-bar line. Now and then the floor drops out for a breakdown.</p></div>
+      <div class="card"><h3>Cut in any time</h3><p>Play a new melody while it runs. The groove keeps going, the model waits, then carries your new idea on.</p></div>
+      <div class="card"><h3>A sound that evolves</h3><p><b>PRESETS</b> morphs the melody's sound in 64 small steps through eight FM timbres, from SOFT to BELL, ACID and VAPOUR.</p></div>
+      <div class="card"><h3>Hands on the model</h3><p><b>K3</b> sets how much it mutates, from a frozen loop to wild. <b>K4</b> makes it play sparser or busier. Plus filter, drive, tempo and note length.</p></div>
+      <div class="card"><h3>Neural lights</h3><p>All 41 key and button lights fire in time: every note sends an impulse along the keys, every bar line a wave through the panel.</p></div>
+    </div>
+  </div>
+</section>
 
-  <h2>The model</h2>
-  <p>A small neural network of about <b>8,400 weights in 8-bit integers</b> runs on the FM-1 itself. It looks at the last few 16ths, the same step one bar and half a phrase back, and where it is in the bar, and picks the next note or a rest. It is kept inside the key and range of your melody. Trained on a rule-built set of hypnotic techno motifs; you can retrain it on your own loops.</p>
+<section id="play">
+  <div class="wrap">
+    <h2>How it plays</h2>
+    <p class="sub">There is nothing to set up. Switch on, play, listen.</p>
+    <ol class="steps">
+      <li><div><h3>Give it an idea</h3><p>The start screen says <code>PLAY ME 1-16 NOTES</code>. Play a short melody. The first note starts a silent 132 BPM clock and every note snaps to a sixteenth.</p></div></li>
+      <li><div><h3>Stop, and it answers</h3><p>Leave a short gap. Right on the next sixteenth the model plays its answer, the same length as your motif: 1 bar for 1 bar, 2 for 2. Then both loop.</p></div></li>
+      <li><div><h3>Let it grow</h3><p>Every repeat sounds a little different. Every 8 bars a new sound joins, in this order:</p>
+        <ul class="order"><li><b>0</b>MELODY</li><li><b>8</b>KICK</li><li><b>16</b>BASS</li><li><b>24</b>HATS</li><li><b>32</b>DRONE</li><li><b>40</b>CLAP</li><li><b>48</b>ECHO</li><li><b>56</b>PERC</li></ul></div></li>
+      <li><div><h3>Steer it</h3><p>Turn the knobs: change the sound, open or close the filter, let the model mutate more or less. A short label shows on the screen while you turn.</p></div></li>
+      <li><div><h3>Change your mind</h3><p>Play a new melody at any moment. Everything keeps playing, the model carries the new motif on, and the sounds that were not in yet arrive in their own time. <kbd>HOME</kbd> goes back to the start.</p></div></li>
+    </ol>
+  </div>
+</section>
 
-  <footer>By BUL&Oslash;KE &middot; GPL-3.0 with the FM1 Open linking exception &middot; built on <a href="https://github.com/m-vave/fm1_open">FM1 Open</a></footer>
-</div>
+<section id="knobs">
+  <div class="wrap">
+    <h2>Knobs</h2>
+    <p class="sub">Seven knobs change the music while it plays. MASTER stays the volume. HOME puts every knob back to its start value.</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">Knob</th><th scope="col">Name on screen</th><th scope="col">What it does</th><th scope="col">Range</th></tr></thead>
+      <tbody>
+        <tr><td>PRESETS</td><td>SOUND</td><td>The melody's sound evolves a little with every detent: SOFT, HOLLOW, BELL, GLASS, METAL, ACID, REED, VAPOUR, and round again. The screen shows where you are, for example <code>HOLLOW&gt;BELL</code>.</td><td>64 steps, endless</td></tr>
+        <tr><td>K1</td><td>LOW-PASS / HIGH-PASS</td><td>DJ filter on the whole mix. Left darkens, right thins out, the middle is off.</td><td>−100 … 0 … +100</td></tr>
+        <tr><td>K2</td><td>DRIVE</td><td>Saturation of the whole mix.</td><td>0 … 100</td></tr>
+        <tr><td>K3</td><td>MUTATE</td><td>How much the model changes on every repeat, and how adventurous its notes are. 0 FROZEN, 1–3 CALM, 4–7 ALIVE, 8–10 WILD.</td><td>0 … 10, starts at 5</td></tr>
+        <tr><td>K4</td><td>NOTES</td><td>SPARSE answers with more rests, or BUSY ones with more notes.</td><td>−5 … +5</td></tr>
+        <tr><td>SELECT</td><td>TEMPO</td><td>Tempo of everything.</td><td>118 … 140 BPM</td></tr>
+        <tr><td>ALGORITHM</td><td>LENGTH</td><td>Note length of the melody: STACCATO, PLUCK or LEGATO.</td><td>15 … 120 %</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<section id="screens">
+  <div class="wrap">
+    <h2>Screens</h2>
+    <p class="sub">80 × 80 square pixels on the 240 × 240 screen, two shades of green, no phone maker's logo. One oscillator line for every sound; a sound that rests loses its line. All pictures come from the firmware's own drawing code.</p>
+    <div class="shots">
+      <figure><img src="assets/boot.png" width="480" height="480" loading="lazy" alt="Start screen: NEURAL JOHNNY, PLAY ME 1-16 NOTES. I WILL CARRY YOUR MELODY ON, a blinking cursor, ORION-MUSICA"><figcaption><b>START</b> The only words you will see. The cursor blinks.</figcaption></figure>
+      <figure><img src="assets/lead.png" width="480" height="480" loading="lazy" alt="One oscillator line: the melody alone"><figcaption><b>MELODY</b> Your motif and its answer, alone.</figcaption></figure>
+      <figure><img src="assets/kick.png" width="480" height="480" loading="lazy" alt="Two lines: melody and kick"><figcaption><b>KICK</b> The second line, from bar 8.</figcaption></figure>
+      <figure><img src="assets/full.png" width="480" height="480" loading="lazy" alt="Seven lines crossing: the full track"><figcaption><b>FULL</b> Seven sounds, seven lines.</figcaption></figure>
+      <figure><img src="assets/sound.png" width="480" height="480" loading="lazy" alt="Label at the top: SOUND 2, SOFT>HOLLOW, over the lines"><figcaption><b>PRESETS</b> The sound on its way from SOFT to HOLLOW.</figcaption></figure>
+      <figure><img src="assets/filter.png" width="480" height="480" loading="lazy" alt="Label at the top: LOW-PASS 80, K1 FILTER"><figcaption><b>K1</b> Low-pass filter for the breakdown.</figcaption></figure>
+      <figure><img src="assets/mutate.png" width="480" height="480" loading="lazy" alt="Label at the top: MUTATE 6, ALIVE"><figcaption><b>K3</b> The model gets a little more adventurous.</figcaption></figure>
+    </div>
+  </div>
+</section>
+
+<section id="lights">
+  <div class="wrap">
+    <h2>Neural lights</h2>
+    <p class="sub">The FM-1's lights are on or off, so Johnny draws with movement instead of brightness. Impulses run along the 27 keys like signals along a nerve and now and then branch over to the 14 buttons. The strip under the screen at the top of this page runs the same rules.</p>
+    <div class="tablewrap">
+    <table>
+      <thead><tr><th scope="col">Sound</th><th scope="col">Light</th></tr></thead>
+      <tbody>
+        <tr><td>MELODY</td><td>Two impulses leave the key of the note, one left, one right, with a short tail.</td></tr>
+        <tr><td>BAR LINE</td><td>With the kick in: a wave through the keys one way and the buttons the other.</td></tr>
+        <tr><td>KICK</td><td>A short, fast synaptic burst somewhere on the keys.</td></tr>
+        <tr><td>BASS</td><td>The key of the root note blinks.</td></tr>
+        <tr><td>HATS, PERC</td><td>Single neurons fire for a moment.</td></tr>
+        <tr><td>CLAP</td><td>An impulse runs along the button row.</td></tr>
+        <tr><td>ECHO</td><td>A slower impulse on the buttons.</td></tr>
+        <tr><td>YOUR NOTES</td><td>Impulses from the key you play.</td></tr>
+        <tr><td>START SCREEN</td><td>The net rests and sparks slowly.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <h2>Install in five minutes</h2>
+    <p class="sub">In desktop Chrome or Edge, over USB. The original V15 firmware is inside the installer, so you can always go back.</p>
+    <ol class="steps">
+      <li><div><h3>Back up</h3><p>Export the projects, voices and samples you want to keep.</p></div></li>
+      <li><div><h3>Connect</h3><p>Switch the FM-1 on and plug it straight into the computer with a USB data cable.</p></div></li>
+      <li><div><h3>Install</h3><p>Open the <a href="install/">installer page</a>, press START and follow it. Coming from stock V15, enable force flash once.</p></div></li>
+      <li><div><h3>Play</h3><p>The FM-1 restarts on the green NEURAL JOHNNY screen. Play a few notes.</p></div></li>
+    </ol>
+    <p style="margin-top:24px"><a class="btn primary" href="install/">OPEN THE INSTALLER ›</a></p>
+  </div>
+</section>
+
+<section id="limits">
+  <div class="wrap">
+    <h2>Good to know</h2>
+    <div class="warn"><strong>BETA 0.1 · first builds.</strong> Neural Johnny compiles with the official JieLi toolchain and passes the SDK's memory checks, and every build runs through a PC test that plays a scripted melody with the real model, synth and screen code. Testing on an original M-VAVE FM-1 (FCC ID: 2ARCP-FM1) is starting now. Back up before you install.</div>
+    <div class="grid2" style="margin-top:18px">
+      <div class="card"><h3>What the model learned</h3><p>It was trained on a rule-built set of hypnotic techno motifs: minor modes, pedal tones, short cells repeated with small changes. Anyone can retrain it on their own loops with one Python script.</p></div>
+      <div class="card"><h3>Kept in key</h3><p>The model only picks notes from the scale and range of what you played, so even a WILD setting stays musical.</p></div>
+      <div class="card"><h3>Its own sounds</h3><p>Johnny plays its own small synth (FM melody, kick, bass, noise drums, drone). The FM-1's DX7 engine stays silent; MASTER is still the volume.</p></div>
+      <div class="card"><h3>Saves nothing</h3><p>Neural Johnny does not write to the FM-1's memory. Each session starts fresh from the start screen.</p></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>Neural Johnny by Orion-Musica · code written together with Claude · built on FM1 Open</span>
+    <span>GPL-3.0 with the FM1 SDK linking exception · not affiliated with M-VAVE · no phone maker's logo or name is used</span>
+  </div>
+</footer>
+
 <script>
-{
-const svg = document.getElementById('wave');
-const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const frame = t => {
-  let out = '';
-  const lines = [[1.3, .6, 9], [3, -.8, 5], [.7, .2, 11]];
-  for (const [cyc, sp, amp] of lines) {
-    let prev = null;
-    for (let x = 0; x < 80; x++) {
-      const y = Math.round(15 + amp * Math.sin(2 * Math.PI * (x / 80 * cyc + t * sp)) * (.6 + .4 * Math.sin(t * 2 + cyc)));
-      const a = prev === null ? y : prev, lo = Math.min(a, y), hi = Math.max(a, y);
-      out += '<rect x="' + x + '" y="' + (hi - lo > 1 ? lo + (a < y ? 1 : 0) : y) + '" width="1" height="' + Math.max(1, hi - lo) + '" fill="#43523d"/>';
-      prev = y;
+(function () {
+  /* GitHub link from the Pages address (user.github.io/repo). */
+  var host = location.hostname, parts = location.pathname.split('/').filter(Boolean);
+  if (/\.github\.io$/.test(host) && parts.length) document.getElementById('gh').href = 'https://github.com/' + host.split('.')[0] + '/' + parts[0];
+
+  /* Neural light strip: the firmware's rules in short, at 132 BPM. */
+  var kb = document.getElementById('nkeys'), bb = document.getElementById('nbtns'), keys = [], btns = [], i;
+  for (i = 0; i < 27; i++) { var k = document.createElement('span'); kb.appendChild(k); keys.push(k); }
+  for (i = 0; i < 14; i++) { var b = document.createElement('span'); bb.appendChild(b); btns.push(b); }
+  var still = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (still) { [3, 7, 12, 19, 24].forEach(function (x) { keys[x].className = 'on'; }); btns[6].className = 'on'; return; }
+  var imps = [], sparks = [], melody = [4, -1, -1, 7, -1, -1, 11, -1, 4, -1, -1, 2, -1, -1, 11, -1], step = 0, STEP = 60000 / 132 / 4, last = performance.now(), acc = 0;
+  function fire(row, x, dir, speed, tail, reach, br) { imps.push({row: row, x: x, dir: dir, speed: speed, tail: tail, stop: x + dir * reach, br: br}); }
+  function spark(row, x, ms, now) { sparks.push({row: row, x: x, until: now + ms}); }
+  function tick(now) {
+    var dt = Math.min(100, now - last) / 1000; last = now; acc += dt * 1000;
+    while (acc >= STEP) {
+      acc -= STEP;
+      var s = step % 16, n = melody[s];
+      if (n >= 0) { fire(0, n + (step >> 4) % 2 * 3, 1, 55, 3, 27, 3); fire(0, n + (step >> 4) % 2 * 3, -1, 55, 3, 27, 3); }
+      if (s % 4 === 0) { var x = Math.floor(Math.random() * 27); fire(0, x, 1, 120, 1, 5, 1); fire(0, x, -1, 120, 1, 5, 1); spark(0, x, 70, now); }
+      if (s === 0) { fire(0, 0, 1, 90, 3, 27, 0); fire(1, 26, -1, 90, 3, 27, 0); }
+      if (s % 4 === 2) spark(Math.random() < .5 ? 0 : 1, Math.floor(Math.random() * 27), 35, now);
+      if (s % 8 === 4) fire(1, Math.random() < .5 ? 0 : 26, s < 8 ? 1 : -1, 140, 4, 27, 0);
+      step++;
     }
+    var onK = new Array(27).fill(false), onB = new Array(14).fill(false);
+    function set(row, x) { if (x < 0 || x > 26) return; if (row === 0) onK[x] = true; else if (x % 2 === 0) onB[x / 2] = true; }
+    imps = imps.filter(function (p) {
+      var before = p.x; p.x += p.dir * p.speed * dt;
+      if (Math.floor(before) !== Math.floor(p.x) && p.br && Math.random() < .07) { p.br--; fire(p.row ^ 1, p.x, Math.random() < .7 ? p.dir : -p.dir, p.speed * .8, p.tail, 8, 0); }
+      var head = Math.round(p.x); for (var t = 0; t <= p.tail; t++) set(p.row, head - p.dir * t);
+      var end = p.x - p.dir * (p.tail + 1);
+      return !(p.dir > 0 ? (end > p.stop || end > 26.5) : (end < p.stop || end < -.5));
+    });
+    sparks = sparks.filter(function (s) { if (s.until > now) { set(s.row, s.x); return true; } return false; });
+    for (var a = 0; a < 27; a++) keys[a].className = onK[a] ? 'on' : '';
+    for (var c = 0; c < 14; c++) btns[c].className = onB[c] ? 'on' : '';
+    requestAnimationFrame(tick);
   }
-  svg.innerHTML = out;
-  if (!still) requestAnimationFrame(() => frame(performance.now() / 1000));
-};
-frame(0);
-}
+  requestAnimationFrame(tick);
+})();
 </script>
 </body>
 </html>
